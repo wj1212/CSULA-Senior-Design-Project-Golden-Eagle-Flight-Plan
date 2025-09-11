@@ -128,34 +128,6 @@ Once the setup is complete, we can start the application's development server.
 
 ---
 
-## 🛠️ Core Technology Stack
 
-### 1. Node.js
-
-* **What it is:** The JavaScript runtime environment. This is the absolute foundation for both our backend and frontend development, so it must be installed first.
-* **How to get it:** Download and install the **LTS (Long-Term Support)** version from the official website.
-* **Link:** **[https://nodejs.org/en/download](https://nodejs.org/en/download)**
-
-### 2. MongoDB
-
-* **What it is:** Our project's database, used to store all application data like user profiles and course information.
-* **How to get it:** Download and install the free **Community Server** edition for the team's respective operating systems (Mac/Windows).
-* **Link:** **[https://www.mongodb.com/try/download/community](https://www.mongodb.com/try/download/community)**
-
-### 3. Express.js
-
-* **What it is:** A framework that runs on Node.js to help us build our backend server and API.
-* **How to get it:** Express is **not** a standalone program. It is a package that we add to our backend project using a command in the terminal.
-* **Command:** `npm install express`
-
-### 4. React Native
-
-* **What it is:** The framework we will use to build our mobile app for the frontend.
-* **How to get it:** Similar to Express, React Native is **not** a standalone program. We will use the `npx` command (which comes with Node.js) to create our frontend project. We will be using the Expo framework to make this easier.
-* **Command:** `npx create-expo-app <Our-App-Name-Here>`
-
-## 🏁 Getting Started
-
-To be determined
 
 
