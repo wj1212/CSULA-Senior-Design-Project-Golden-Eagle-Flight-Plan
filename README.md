@@ -49,6 +49,7 @@ First, we need to ensure the following software is installed on our system:
 * **Git:** For cloning the repository. [Download Git](https://git-scm.com/)
 * **Node.js:** We recommend using the latest LTS (Long-Term Support) version. This will also install `npm` (Node Package Manager). [Download Node.js](https://nodejs.org/)
 * **(Recommended) GitHub Desktop:** A user-friendly graphical interface for Git. [Download GitHub Desktop](https://desktop.github.com/)
+* **MongoDB:** We will need access to our shared **MongoDB Atlas** database and should have the connection string for the `.env` file.
 
 ### **Installation & Setup**
 
@@ -70,34 +71,55 @@ First, we need to ensure the following software is installed on our system:
 
 2.  **Navigate into the project directory:**
 
-    If you used the command line to clone, you'll need to navigate into the new folder. If you used GitHub Desktop, you can open a terminal directly from the app by going to `Repository` > `Open in Command Prompt/Terminal`.
+    If we used the command line to clone, we'll need to navigate into the new folder. If we used GitHub Desktop, we can open a terminal directly from the app by going to `Repository` > `Open in Command Prompt/Terminal`.
     ```bash
     cd CSULA-Senior-Design-Project-Golden-Eagle-Flight-Plan
     ```
 
-3.  **Install all the required dependencies:**
-    This command reads the `package.json` file and downloads all the necessary packages into a `node_modules` folder.
-    ```bash
-    npm install
-    ```
+3.  **Install Dependencies (Frontend & Backend)**
+
+    * First, we'll install the **frontend** dependencies from the root directory:
+        ```bash
+        npm install
+        ```
+    * Next, we'll navigate into the `backend` directory and install its dependencies:
+        ```bash
+        cd backend
+        npm install
+        ```
+
+4.  **Configure the Backend**
+    * In the `backend` folder, we need to create a new file named `.env`.
+    * Add the `DB_CONNECTION_STRING` we received from MongoDB Atlas to this file.
+    * We can navigate back to the root directory when done:
+        ```bash
+        cd ..
+        ```
 
 ### **Running the Development Server**
 
-Once the setup is complete, we can start the application's development server.
+Our project requires **two terminal windows** running at the same time: one for the backend and one for the frontend.
 
-1.  **Start the server:**
+#### **Terminal 1: Start the Backend Server**
+
+1.  Navigate to the `backend` directory:
+    ```bash
+    cd backend
+    ```
+2.  Start the server:
+    ```bash
+    node server.js
+    ```
+3.  We should see a confirmation that the server is running and connected to the database. **This terminal window should be kept running.**
+
+#### **Terminal 2: Start the Frontend App**
+
+1.  Open a **new** terminal window and navigate to the **project root directory**.
+2.  Start the Expo development server:
     ```bash
     npm start
     ```
-
-2.  **View the application:**
-    After running the command, the Metro Bundler will start in the terminal and display a QR code. We have several options to view the app:
-    * **On the Web:** Press the `w` key in the terminal. This will open the application in a default web browser.
-    * **On a Mobile Device:**
-        1.  First, install the **Expo Go** app on your phone from the Apple App Store or Google Play Store.
-        2.  Ensure your phone and computer are connected to the **same Wi-Fi network**.
-        3.  **For iOS:** Open the phone's built-in **Camera app** and point it at the QR code. A notification will appear—tap it to open the project in Expo Go.
-        4.  **For Android:** Open the **Expo Go app** and use the "Scan" feature to scan the QR code.
+3.  A QR code will appear. We can then use the **Expo Go** app on a phone to scan it and open the application.
 
 ### **Troubleshooting**
 
@@ -128,8 +150,6 @@ Once the setup is complete, we can start the application's development server.
 
 ---
 
-## 🏁 Getting Started
 
-To be determined
 
 
