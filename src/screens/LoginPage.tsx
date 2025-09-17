@@ -81,6 +81,14 @@ return (
       onPress={() => navigation.replace('Register')}
      
     />
+
+    <View style={{ height: 40, borderBottomWidth: 1, borderBottomColor: '#ccc', width: '80%', marginVertical: 20 }} />
+
+      <Button
+        title="DEV: Quick Access to Main App"
+        onPress={() => navigation.replace('Main')}
+        color="#28a745" // Green color to distinguish it as a dev tool
+      />
   </View>
 );
 }
