@@ -8,7 +8,7 @@ import * as AuthSession from 'expo-auth-session';
 
 //TS type helper from react navigation
 import { StackScreenProps } from '@react-navigation/stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../../frontend/App';
 
 
 //properties will include navigation, or methods to move between screens

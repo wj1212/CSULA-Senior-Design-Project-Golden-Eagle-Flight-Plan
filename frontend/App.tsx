@@ -6,11 +6,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import LoginPage from './src/screens/LoginPage';
-import Registration from './src/screens/Registration';
+import LoginPage from '../frontend/src/screens/LoginPage';
+import Registration from '../frontend/src/screens/Registration';
 
-import { BottomTabNavigator } from './src/navigation/BottomTabNavigator';
-import RegLogin from './src/screens/RegLogin';
+import { BottomTabNavigator } from '../frontend/src/navigation/BottomTabNavigator';
+import RegLogin from '../frontend/src/screens/RegLogin';
 
 // to define the stack's routes
 export type RootStackParamList = {

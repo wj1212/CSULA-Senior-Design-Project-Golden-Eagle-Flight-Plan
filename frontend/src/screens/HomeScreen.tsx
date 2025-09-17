@@ -11,7 +11,7 @@ import { StatCard } from '../components/StatCard';
 import { OpportunityCard } from '../components/OpportunityCard';
 import { mockUser, mockOpportunities, mockCourses } from '../data/mockData';
 
-export const DashboardScreen: React.FC = () => {
+export const HomeScreen: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>

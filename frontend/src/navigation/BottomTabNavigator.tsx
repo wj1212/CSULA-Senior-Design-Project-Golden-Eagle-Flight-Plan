@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { DashboardScreen } from '../screens/DashboardScreen';
+import { HomeScreen } from '../screens/HomeScreen';
 import { OpportunitiesScreen } from '../screens/OpportunitiesScreen';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
 import { NavigationScreens } from '../types';
@@ -16,7 +16,7 @@ export const BottomTabNavigator: React.FC = () => {
           let iconName: keyof typeof Ionicons.glyphMap;
 
           switch (route.name) {
-            case 'Dashboard':
+            case 'Home':
               iconName = focused ? 'home' : 'home-outline';
               break;
             case 'Opportunities':
@@ -68,8 +68,8 @@ export const BottomTabNavigator: React.FC = () => {
       })}
     >
       <Tab.Screen 
-        name="Dashboard" 
-        component={DashboardScreen}
+        name="Home" 
+        component={HomeScreen}
         options={{
           headerTitle: '🦅 Golden Eagle Flight Plan',
         }}
