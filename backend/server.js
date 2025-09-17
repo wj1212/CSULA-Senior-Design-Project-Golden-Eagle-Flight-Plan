@@ -13,7 +13,7 @@ mongoose.connect(connectionString)
 
 app.get('/', (req, res) => {
   res.send('Hello from the Golden Eagle Flight Plan Backend!');
-});
+}); 
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
