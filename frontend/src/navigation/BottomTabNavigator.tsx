@@ -5,6 +5,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { OpportunitiesScreen } from '../screens/OpportunitiesScreen';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
 import { NavigationScreens } from '../types';
+import { Button, Image } from 'react-native';
 
 const Tab = createBottomTabNavigator<NavigationScreens>();
 
@@ -67,31 +68,59 @@ export const BottomTabNavigator: React.FC = () => {
         },
       })}
     >
-      <Tab.Screen 
-        name="Home" 
+      <Tab.Screen
+        name="Home"
         component={HomeScreen}
         options={{
-          headerTitle: '🦅 Golden Eagle Flight Plan',
+          // 1. Adds "Profile" text to the top left
+          headerLeft: () => (
+            <Button
+              onPress={() => alert('Profile pressed!')}
+              title="Profile"
+              color="#64748b"
+              style={{ marginRight: 15 }}
+            />
+          ),
+
+          // 2. Adds the logo to the center
+          headerTitle: () => (
+            <Image
+              source={require('../../../assets/logo-a.png')}
+              style={{ width: 110, height: 35, resizeMode: 'contain' }}
+            />
+          ),
+          headerTitleAlign: 'center',
+
+          // 3. Adds the Logout button to the top right
+          headerRight: () => (
+            <Button
+              onPress={() => alert('Logout pressed!')}
+              title="Logout"
+              color="#64748b"
+              style={{ marginRight: 15 }}
+            />
+          ),
         }}
       />
-      <Tab.Screen 
-        name="Opportunities" 
-        component={OpportunitiesScreen} 
+
+      <Tab.Screen
+        name="Opportunities"
+        component={OpportunitiesScreen}
       />
-      <Tab.Screen 
-        name="Courses" 
+      <Tab.Screen
+        name="Courses"
         children={() => <PlaceholderScreen title="Course Planning" />}
       />
-      <Tab.Screen 
-        name="Plan" 
+      <Tab.Screen
+        name="Plan"
         children={() => <PlaceholderScreen title="My Flight Plan" />}
       />
-      <Tab.Screen 
-        name="Community" 
+      <Tab.Screen
+        name="Community"
         children={() => <PlaceholderScreen title="Community" />}
       />
-      <Tab.Screen 
-        name="Settings" 
+      <Tab.Screen
+        name="Settings"
         children={() => <PlaceholderScreen title="Settings" />}
       />
     </Tab.Navigator>

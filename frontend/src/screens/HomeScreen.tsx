@@ -1,22 +1,44 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  StyleSheet, 
-  TouchableOpacity 
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatCard } from '../components/StatCard';
 import { OpportunityCard } from '../components/OpportunityCard';
 import { mockUser, mockOpportunities, mockCourses } from '../data/mockData';
+import { CircleButton } from '../components/CircleButton';
 
 export const HomeScreen: React.FC = () => {
+
+  const handleAcademicPress = () => console.log('Academic Press');
+  const handleCareerPress = () => console.log('Career Press');
+  const handleLeadershipPress = () => console.log('Leadership Press');
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>
         Welcome back, {mockUser.name.split(' ')[0]}!
       </Text>
+
+      <View style={styles.circleNavContainer}>
+        <CircleButton title="Academic" onPress={handleAcademicPress} />
+        <CircleButton title="Career skills" onPress={handleCareerPress} />
+        <CircleButton title="Leadership" onPress={handleLeadershipPress} />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Recommended</Text>
+        {mockOpportunities.slice(0, 2).map((opportunity) => (
+          <OpportunityCard
+            key={opportunity.id}
+            opportunity={opportunity}
+          />
+        ))}
+      </View>
 
       {/* Stats Section */}
       <View style={styles.statsContainer}>
@@ -48,9 +70,9 @@ export const HomeScreen: React.FC = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Recommended for You</Text>
         {mockOpportunities.slice(0, 2).map((opportunity) => (
-          <OpportunityCard 
-            key={opportunity.id} 
-            opportunity={opportunity} 
+          <OpportunityCard
+            key={opportunity.id}
+            opportunity={opportunity}
           />
         ))}
       </View>
@@ -66,7 +88,7 @@ export const HomeScreen: React.FC = () => {
               <Text style={styles.courseCredits}>{course.credits} credits</Text>
             </View>
             <View style={[
-              styles.priorityBadge, 
+              styles.priorityBadge,
               course.priority === 'High' ? styles.highPriority : styles.mediumPriority
             ]}>
               <Text style={[
@@ -100,6 +122,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 32,
     marginHorizontal: -8,
+  },
+  circleNavContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginVertical: 32,
   },
   section: {
     marginBottom: 32,

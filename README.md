@@ -1,4 +1,4 @@
-![Golden Eagle Flight Plan Logo](./assets/logo.png)
+![Golden Eagle Flight Plan Logo](./assets/logo-gefp.png)
 # CSULA Senior Design Project
 
 ## ✨ Objective
@@ -136,16 +136,18 @@ Our project requires **two terminal windows** running at the same time: one for 
   - Brandon Jou
   - Kenny Jiang
   - Jayson Alfaro-Trujillo
+  - Jose Mateo Ayala
 
 - **Backend Development:**
   - Perla Reyes-Ortega
   - Jose Oscanoa
 
+- **Frontend & Backend:**
+  - Arman Mahmoodzadeh
+
 - **To Be Determined:**
   - Rana Ashour
-  - Jose Mateo Ayala
   - Jael Estrada
-  - Arman Mahmoodzadeh
   - Adan Trejo
 
 ---
