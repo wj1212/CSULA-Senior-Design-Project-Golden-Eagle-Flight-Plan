@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { COLORS } from "../constants/colors";
+import { SPACING } from "../constants/spacing";
 
 export default function RegLogin() {
 
@@ -44,33 +46,36 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
-    backgroundColor: "#eee",
+    padding: SPACING.xl,
+    backgroundColor: COLORS.background,
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 30,
+    marginBottom: SPACING.xxxl,
+    color: COLORS.text,
   },
   input: {
     width: "100%",
     height: 50,
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    backgroundColor: "#fff",
+    borderColor: COLORS.border,
+    borderRadius: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.lg,
+    backgroundColor: COLORS.background,
   },
   button: {
-    backgroundColor: "#007bff",
-    paddingVertical: 15,
-    paddingHorizontal: 40,
-    borderRadius: 10,
-    marginTop: 10,
+    backgroundColor: COLORS.buttonPrimaryBackground, // Gold
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.xxxl,
+    borderRadius: SPACING.sm,
+    marginTop: SPACING.md,
+    width: "100%",
+    alignItems: 'center',
   },
   buttonText: {
-    color: "#fff",
+    color: COLORS.buttonPrimaryText, // Black
     fontWeight: "bold",
     fontSize: 16,
   },

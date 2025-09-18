@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { COLORS } from '../constants/colors';
+import { SPACING } from '../constants/spacing';
 
 interface StatCardProps {
   value: string | number;
@@ -17,11 +19,11 @@ export const StatCard: React.FC<StatCardProps> = ({ value, label }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
-    padding: 24,
-    borderRadius: 12,
+    backgroundColor: COLORS.background,
+    padding: SPACING.xxl,
+    borderRadius: SPACING.xxl,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -30,17 +32,17 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
     flex: 1,
-    margin: 8,
+    margin: SPACING.md,
   },
   value: {
-    fontSize: 32,
+    fontSize: 23,
     fontWeight: 'bold',
-    color: '#1e40af',
+    color: COLORS.text,
     marginBottom: 4,
   },
   label: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: 11,
+    color: COLORS.text,
     fontWeight: '500',
     textAlign: 'center',
   },

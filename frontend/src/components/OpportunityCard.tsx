@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Opportunity } from '../types';
+import { COLORS } from '../constants/colors';
+import { SPACING } from '../constants/spacing';
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
@@ -72,15 +74,12 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    backgroundColor: COLORS.background,
+    padding: SPACING.xl,
+    borderRadius: SPACING.md,
+    marginBottom: SPACING.lg,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
@@ -88,11 +87,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
   },
   iconContainer: {
-    marginRight: 12,
-    marginTop: 4,
+    marginRight: SPACING.md,
+    marginTop: SPACING.xs,
   },
   info: {
     flex: 1,
@@ -100,13 +99,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 4,
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
   },
   company: {
     fontSize: 14,
     color: '#64748b',
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
   },
   deadline: {
     fontSize: 12,
@@ -119,7 +118,7 @@ const styles = StyleSheet.create({
   match: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#059669',
+    color: COLORS.text,
   },
   matchLabel: {
     fontSize: 10,
@@ -141,19 +140,19 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: COLORS.buttonPrimaryText,
   },
   primaryButton: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
-    backgroundColor: '#2563eb',
+    backgroundColor: COLORS.buttonPrimaryBackground,
     alignItems: 'center',
   },
   primaryButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: 'white',
+    color: COLORS.buttonPrimaryText,
   },
 });

@@ -20,8 +20,10 @@
         "foregroundImage": "../assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "softwareKeyboardLayoutMode": "resize",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.GoldenEagleApp"
     },
     "web": {
       "favicon": "../assets/favicon.png"

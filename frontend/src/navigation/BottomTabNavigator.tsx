@@ -5,17 +5,36 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { OpportunitiesScreen } from '../screens/OpportunitiesScreen';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
 import { NavigationScreens } from '../types';
-import { Button, Image } from 'react-native';
+import { Image, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { CommonActions } from '@react-navigation/native';
+import { COLORS } from '../constants/colors'; // Import theme
+import { SPACING } from '../constants/spacing';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+
 
 const Tab = createBottomTabNavigator<NavigationScreens>();
 
 export const BottomTabNavigator: React.FC = () => {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={({ navigation, route }) => ({
+        headerTitle: () => (
+          <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+            <Image
+              source={require('../../../assets/logo-b.png')}
+              style={{ width: 160, height: 51, resizeMode: 'contain' }}
+            />
+          </TouchableOpacity>
+        ),
+        headerTitleAlign: 'center',
+        headerLeft: () => <View style={styles.placeholder} />,
+        headerRight: () => <View style={styles.placeholder} />,
+
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap;
-
+          // ... switch statement for icons remains the same
           switch (route.name) {
             case 'Home':
               iconName = focused ? 'home' : 'home-outline';
@@ -38,71 +57,56 @@ export const BottomTabNavigator: React.FC = () => {
             default:
               iconName = 'help-outline';
           }
-
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#2563eb',
-        tabBarInactiveTintColor: '#64748b',
         headerStyle: {
-          backgroundColor: 'white',
-          shadowColor: '#000',
-          shadowOffset: {
-            width: 0,
-            height: 2,
-          },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 3,
+          backgroundColor: COLORS.headerBackground, height: 70 + insets.top,// Black header
         },
         headerTitleStyle: {
           fontWeight: 'bold',
           fontSize: 18,
         },
         tabBarStyle: {
-          backgroundColor: 'white',
-          borderTopColor: '#e2e8f0',
-          borderTopWidth: 1,
-          paddingBottom: 5,
-          paddingTop: 5,
-          height: 60,
+          backgroundColor: COLORS.headerBackground, // Black footer
+          borderTopWidth: 0,
+          paddingTop: SPACING.xs,
+          height: 70 + insets.bottom,
         },
+        tabBarActiveTintColor: COLORS.primary, // Gold for active icon
+        tabBarInactiveTintColor: COLORS.inactive, // Gray for inactive icon
       })}
     >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{
-          // 1. Adds "Profile" text to the top left
+        options={({ navigation }) => ({
           headerLeft: () => (
-            <Button
+            <TouchableOpacity
               onPress={() => alert('Profile pressed!')}
-              title="Profile"
-              color="#64748b"
-              style={{ marginRight: 15 }}
-            />
+
+              style={[styles.headerButtonPrimary, { marginLeft: SPACING.md }]}
+            >
+              <Text style={styles.headerButtonPrimaryText}>Profile</Text>
+            </TouchableOpacity>
           ),
 
-          // 2. Adds the logo to the center
-          headerTitle: () => (
-            <Image
-              source={require('../../../assets/logo-a.png')}
-              style={{ width: 110, height: 35, resizeMode: 'contain' }}
-            />
-          ),
-          headerTitleAlign: 'center',
-
-          // 3. Adds the Logout button to the top right
           headerRight: () => (
-            <Button
-              onPress={() => alert('Logout pressed!')}
-              title="Logout"
-              color="#64748b"
-              style={{ marginRight: 15 }}
-            />
+            <TouchableOpacity
+              onPress={() =>
+                navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                  })
+                )
+              }
+              style={[styles.headerButtonPrimary, { marginRight: SPACING.md }]}            >
+              <Text style={styles.headerButtonPrimaryText}>Logout</Text>
+            </TouchableOpacity>
           ),
-        }}
+        })}
       />
-
+      {/* ... Other Tab.Screen components ... */}
       <Tab.Screen
         name="Opportunities"
         component={OpportunitiesScreen}
@@ -126,3 +130,20 @@ export const BottomTabNavigator: React.FC = () => {
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  placeholder: {
+    width: 85,
+  },
+  headerButtonPrimary: {
+    backgroundColor: COLORS.buttonPrimaryBackground,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: SPACING.sm,
+  },
+  headerButtonPrimaryText: {
+    color: COLORS.buttonPrimaryText,
+    fontSize: 14,
+    fontWeight: '600',
+  }
+});

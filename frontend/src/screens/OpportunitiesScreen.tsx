@@ -10,6 +10,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { OpportunityCard } from '../components/OpportunityCard';
 import { mockOpportunities } from '../data/mockData';
+import { COLORS } from '../constants/colors';
+import { SPACING } from '../constants/spacing';
 
 export const OpportunitiesScreen: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState('All');
@@ -75,14 +77,14 @@ export const OpportunitiesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 20,
+    backgroundColor: COLORS.background,
+    padding: SPACING.xl,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 24,
+    color: COLORS.text,
+    marginBottom: SPACING.xxl,
   },
   searchContainer: {
     marginBottom: 20,
@@ -90,54 +92,48 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    backgroundColor: COLORS.background,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    borderRadius: SPACING.md,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: SPACING.md,
     fontSize: 16,
-    color: '#1e293b',
+    color: COLORS.text,
   },
   filterContainer: {
     marginBottom: 20,
     flexGrow: 0,
   },
   filterTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
     borderRadius: 20,
-    backgroundColor: 'white',
-    marginRight: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
+    backgroundColor: COLORS.background,
+    marginRight: SPACING.sm,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
   },
   filterTabActive: {
-    backgroundColor: '#2563eb',
+    backgroundColor: COLORS.buttonPrimaryBackground, // Gold
   },
   filterTabText: {
     fontSize: 14,
-    color: '#64748b',
+    color: COLORS.text,
     fontWeight: '500',
   },
   filterTabTextActive: {
-    color: 'white',
+    color: COLORS.buttonPrimaryText, // Black
   },
   opportunitiesList: {
     flex: 1,

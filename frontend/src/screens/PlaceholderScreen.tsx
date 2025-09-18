@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { COLORS } from '../constants/colors';
+import { SPACING } from '../constants/spacing';
 
 interface PlaceholderScreenProps {
   title: string;
@@ -17,8 +19,8 @@ export const PlaceholderScreen: React.FC<PlaceholderScreenProps> = ({ title }) =
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 20,
+    backgroundColor: COLORS.background,
+    padding: SPACING.xl,
     justifyContent: 'center',
     alignItems: 'center',
   },
