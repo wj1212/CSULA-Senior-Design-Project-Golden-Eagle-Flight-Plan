@@ -57,12 +57,35 @@ export const HomeScreen: React.FC = () => {
               ))}
             </View>
 
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Recommended Courses - Fall 2025</Text>
+              {mockCourses.map((course) => (
+                <View key={course.id} style={styles.courseCard}>
+                  <View style={styles.courseInfo}>
+                    <Text style={styles.courseCode}>{course.code}</Text>
+                    <Text style={styles.courseName}>{course.name}</Text>
+                    <Text style={styles.courseCredits}>{course.credits} credits</Text>
+                  </View>
+                  <View style={[
+                    styles.priorityBadge,
+                    course.priority === 'High' ? styles.highPriority : styles.mediumPriority
+                  ]}>
+                    <Text style={[
+                      styles.priorityText,
+                      course.priority === 'High' ? styles.highPriorityText : styles.mediumPriorityText
+                    ]}>
+                      {course.priority}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+
+            </View>
             <View style={styles.statsContainer}>
               <StatCard value={mockUser.gpa} label="Current GPA" />
               <StatCard value={mockUser.credits} label="Credits Earned" />
               <StatCard value="73%" label="Degree Progress" />
             </View>
-
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
               <View style={styles.quickActions}>
@@ -83,6 +106,7 @@ export const HomeScreen: React.FC = () => {
                 </TouchableOpacity>
               </View>
             </View>
+
           </View>
         </ScrollView>
 
@@ -97,7 +121,7 @@ export const HomeScreen: React.FC = () => {
           </View>
         </View>
       </KeyboardAvoidingView >
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 
@@ -162,9 +186,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-
   searchBarContainer: {
-
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.md,
     backgroundColor: COLORS.background,
@@ -172,14 +194,10 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-
     backgroundColor: '#f5f5f5',
-
     borderRadius: SPACING.xl,
     paddingHorizontal: SPACING.lg,
-
     paddingVertical: SPACING.sm,
-
     shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -188,16 +206,68 @@ const styles = StyleSheet.create({
   },
   searchIcon: {
     marginRight: SPACING.sm,
-
     color: COLORS.text,
   },
   searchInput: {
     flex: 1,
-
     fontSize: 16,
     color: COLORS.text,
-
     paddingVertical: SPACING.xs,
   },
-
+  courseCard: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  courseInfo: {
+    flex: 1,
+  },
+  courseCode: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  courseName: {
+    fontSize: 14,
+    color: COLORS.text,
+    marginTop: 2,
+  },
+  courseCredits: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 4,
+  },
+  priorityBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  highPriority: {
+    backgroundColor: '#fef2f2',
+  },
+  mediumPriority: {
+    backgroundColor: '#fefbf2',
+  },
+  priorityText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  highPriorityText: {
+    color: '#dc2626',
+  },
+  mediumPriorityText: {
+    color: '#d97706',
+  },
 });
