@@ -137,6 +137,7 @@ Our project requires **two terminal windows** running at the same time: one for 
   - Kenny Jiang
   - Jayson Alfaro-Trujillo
   - Jose Mateo Ayala
+  - Adan Trejo
 
 - **Backend Development:**
   - Perla Reyes-Ortega
@@ -148,7 +149,6 @@ Our project requires **two terminal windows** running at the same time: one for 
 - **To Be Determined:**
   - Rana Ashour
   - Jael Estrada
-  - Adan Trejo
 
 ---
 
