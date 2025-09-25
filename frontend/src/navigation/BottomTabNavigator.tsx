@@ -7,11 +7,9 @@ import { PlaceholderScreen } from '../screens/PlaceholderScreen';
 import { NavigationScreens } from '../types';
 import { Image, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { CommonActions } from '@react-navigation/native';
-import { COLORS } from '../constants/colors'; // Import theme
+import { COLORS } from '../constants/colors';
 import { SPACING } from '../constants/spacing';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-
 
 const Tab = createBottomTabNavigator<NavigationScreens>();
 
@@ -34,7 +32,6 @@ export const BottomTabNavigator: React.FC = () => {
 
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap;
-          // ... switch statement for icons remains the same
           switch (route.name) {
             case 'Home':
               iconName = focused ? 'home' : 'home-outline';
@@ -60,20 +57,21 @@ export const BottomTabNavigator: React.FC = () => {
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         headerStyle: {
-          backgroundColor: COLORS.headerBackground, height: 70 + insets.top,// Black header
+          backgroundColor: COLORS.headerBackground,
+          height: 70 + insets.top,
         },
         headerTitleStyle: {
           fontWeight: 'bold',
           fontSize: 18,
         },
         tabBarStyle: {
-          backgroundColor: COLORS.headerBackground, // Black footer
+          backgroundColor: COLORS.headerBackground,
           borderTopWidth: 0,
           paddingTop: SPACING.xs,
           height: 70 + insets.bottom,
         },
-        tabBarActiveTintColor: COLORS.primary, // Gold for active icon
-        tabBarInactiveTintColor: COLORS.inactive, // Gray for inactive icon
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.inactive,
       })}
     >
       <Tab.Screen
@@ -82,14 +80,12 @@ export const BottomTabNavigator: React.FC = () => {
         options={({ navigation }) => ({
           headerLeft: () => (
             <TouchableOpacity
-              onPress={() => alert('Profile pressed!')}
-
+              onPress={() => navigation.navigate("Profile")}
               style={[styles.headerButtonPrimary, { marginLeft: SPACING.md }]}
             >
               <Text style={styles.headerButtonPrimaryText}>Profile</Text>
             </TouchableOpacity>
           ),
-
           headerRight: () => (
             <TouchableOpacity
               onPress={() =>
@@ -100,17 +96,14 @@ export const BottomTabNavigator: React.FC = () => {
                   })
                 )
               }
-              style={[styles.headerButtonPrimary, { marginRight: SPACING.md }]}            >
+              style={[styles.headerButtonPrimary, { marginRight: SPACING.md }]}
+            >
               <Text style={styles.headerButtonPrimaryText}>Logout</Text>
             </TouchableOpacity>
           ),
         })}
       />
-      {/* ... Other Tab.Screen components ... */}
-      <Tab.Screen
-        name="Opportunities"
-        component={OpportunitiesScreen}
-      />
+      <Tab.Screen name="Opportunities" component={OpportunitiesScreen} />
       <Tab.Screen
         name="Courses"
         children={() => <PlaceholderScreen title="Course Planning" />}
@@ -145,5 +138,5 @@ const styles = StyleSheet.create({
     color: COLORS.buttonPrimaryText,
     fontSize: 14,
     fontWeight: '600',
-  }
+  },
 });
