@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from "../contexts/AuthContext";
 import { COLORS } from "../constants/colors";
 import { SPACING } from "../constants/spacing";
-import { StackScreenProps } from '@react-navigation/stack';
-import { RootStackParamList } from '../../App';
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../../App";
 
-type Properties = StackScreenProps<RootStackParamList, 'RegLogin'>;
+type Nav = NativeStackNavigationProp<RootStackParamList, "RegLogin">;
 
-export default function RegLogin({ navigation }: Properties) {
+export default function RegLogin() {
+  const navigation = useNavigation<Nav>();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,25 +18,22 @@ export default function RegLogin({ navigation }: Properties) {
   const { login } = useAuth();
 
   const handleLogin = async () => {
-    // Basic validation
     if (!email.trim()) {
       Alert.alert("Error", "Please enter your email");
       return;
     }
-
     if (!password) {
       Alert.alert("Error", "Please enter your password");
       return;
     }
 
     setLoading(true);
-
     try {
       const result = await login(email.trim().toLowerCase(), password);
 
       if (result.success) {
         console.log("Login successful, navigating to Main");
-        navigation.replace('Main');
+        navigation.replace("Main");
       } else {
         console.log("Login failed:", result.error);
         Alert.alert("Error", result.error || "Login failed");
@@ -46,8 +45,24 @@ export default function RegLogin({ navigation }: Properties) {
     }
   };
 
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    }
+  };
+
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <Text style={styles.backButtonText}>← Back</Text>
+      </TouchableOpacity>
+
       <Text style={styles.title}>Login</Text>
 
       <TextInput
@@ -66,9 +81,8 @@ export default function RegLogin({ navigation }: Properties) {
         onChangeText={setPassword}
       />
 
-
-      <TouchableOpacity 
-        style={[styles.button, loading && styles.buttonDisabled]} 
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
         onPress={handleLogin}
         disabled={loading}
       >
@@ -88,6 +102,16 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
     backgroundColor: COLORS.background,
   },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    padding: 10,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: COLORS.text,
+  },
   title: {
     fontSize: 28,
     fontWeight: "bold",
@@ -105,16 +129,16 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   button: {
-    backgroundColor: COLORS.buttonPrimaryBackground, // Gold
+    backgroundColor: COLORS.buttonPrimaryBackground,
     paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.xxxl,
     borderRadius: SPACING.sm,
     marginTop: SPACING.md,
     width: "100%",
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonText: {
-    color: COLORS.buttonPrimaryText, // Black
+    color: COLORS.buttonPrimaryText,
     fontWeight: "bold",
     fontSize: 16,
   },

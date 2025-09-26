@@ -1,15 +1,16 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { useAuth } from '../contexts/AuthContext';
-import { COLORS } from '../constants/colors';
-import { SPACING } from '../constants/spacing';
-import { StackScreenProps } from '@react-navigation/stack';
-import { RootStackParamList } from '../../App';
+import { useAuth } from "../contexts/AuthContext";
+import { COLORS } from "../constants/colors";
+import { SPACING } from "../constants/spacing";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../../App";
 
-type Properties = StackScreenProps<RootStackParamList, 'Register'>;
+type Nav = NativeStackNavigationProp<RootStackParamList, "Register">;
 
-
-export default function Registration({ navigation }: Properties) {
+export default function Registration() {
+  const navigation = useNavigation<Nav>();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,34 +20,28 @@ export default function Registration({ navigation }: Properties) {
   const { register } = useAuth();
 
   const handleRegister = async () => {
-    // Basic validation
     if (!name.trim()) {
       Alert.alert("Error", "Please enter your name");
       return;
     }
-
     if (!email.trim()) {
       Alert.alert("Error", "Please enter your email");
       return;
     }
-
     if (!password) {
       Alert.alert("Error", "Please enter a password");
       return;
     }
-
     if (password !== confirmPassword) {
       Alert.alert("Error", "Passwords do not match");
       return;
     }
-
     if (password.length < 6) {
       Alert.alert("Error", "Password must be at least 6 characters");
       return;
     }
 
     setLoading(true);
-
     try {
       const result = await register({
         name: name.trim(),
@@ -57,7 +52,7 @@ export default function Registration({ navigation }: Properties) {
 
       if (result.success) {
         console.log("Registration successful, navigating to Main");
-        navigation.replace('Main');
+        navigation.replace("Main");
       } else {
         console.log("Registration failed:", result.error);
         Alert.alert("Error", result.error || "Registration failed");
@@ -69,10 +64,24 @@ export default function Registration({ navigation }: Properties) {
     }
   };
 
-
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    }
+  };
 
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <Text style={styles.backButtonText}>← Back</Text>
+      </TouchableOpacity>
+
       <Text style={styles.title}>Sign Up</Text>
 
       <TextInput
@@ -81,7 +90,6 @@ export default function Registration({ navigation }: Properties) {
         value={name}
         onChangeText={setName}
       />
-
       <TextInput
         style={styles.input}
         placeholder="Your Email"
@@ -89,7 +97,6 @@ export default function Registration({ navigation }: Properties) {
         value={email}
         onChangeText={setEmail}
       />
-
       <TextInput
         style={styles.input}
         placeholder="Password"
@@ -97,7 +104,6 @@ export default function Registration({ navigation }: Properties) {
         value={password}
         onChangeText={setPassword}
       />
-
       <TextInput
         style={styles.input}
         placeholder="Repeat your password"
@@ -106,8 +112,8 @@ export default function Registration({ navigation }: Properties) {
         onChangeText={setConfirmPassword}
       />
 
-      <TouchableOpacity 
-        style={[styles.button, loading && styles.buttonDisabled]} 
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
         onPress={handleRegister}
         disabled={loading}
       >
@@ -127,6 +133,8 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
     backgroundColor: COLORS.background,
   },
+  backButton: { position: "absolute", top: 50, left: 20, padding: 10 },
+  backButtonText: { fontSize: 16, color: COLORS.text },
   title: {
     fontSize: 28,
     fontWeight: "bold",
@@ -144,16 +152,16 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   button: {
-    backgroundColor: COLORS.buttonPrimaryBackground, // Gold
+    backgroundColor: COLORS.buttonPrimaryBackground,
     paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.xxxl,
     borderRadius: SPACING.sm,
     marginTop: SPACING.md,
     width: "100%",
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonText: {
-    color: COLORS.buttonPrimaryText, // Black
+    color: COLORS.buttonPrimaryText,
     fontWeight: "bold",
     fontSize: 16,
   },

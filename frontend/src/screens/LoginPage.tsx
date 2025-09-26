@@ -1,44 +1,61 @@
-import React, { useEffect } from 'react';
-import {View, Text, Button} from 'react-native';
-//AuthSession is an expo library that handles
-//OAuth/OpenID flows 
-//can manage tokens, redirections, and communication
-// with external login
-import * as AuthSession from 'expo-auth-session';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, Platform, Image } from 'react-native';
+// import * as AuthSession from 'expo-auth-session'; // 🔒 keep for future Microsoft login
 import { useAuth } from '../contexts/AuthContext';
 
-//TS type helper from react navigation
+// TS type helper from react navigation
 import { StackScreenProps } from '@react-navigation/stack';
-import { RootStackParamList } from '../../frontend/App';
-
-
-//properties will include navigation, or methods to move between screens
+import { RootStackParamList } from '../..//App';
+import { COLORS } from '../constants/colors';
+import { SPACING } from '../constants/spacing';
 
 type Properties = StackScreenProps<RootStackParamList, 'Login'>;
 
-export default function LoginPage({navigation}: Properties){
+export default function LoginPage({ navigation }: Properties) {
   const { user } = useAuth();
-  
-  //setting up the Microsoft OAuth request 
+  const [loadingSSO, setLoadingSSO] = useState(false);
+
+  // ——— Header (centered logo, no buttons) ———
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <Image
+          source={require('../../../assets/logo-b.png')}
+          style={{ width: 160, height: 51, resizeMode: 'contain' }}
+        />
+      ),
+      headerTitleAlign: 'center',
+      headerLeft: () => <View style={{ width: 85 }} />,
+      headerRight: () => <View style={{ width: 85 }} />,
+      headerStyle: { backgroundColor: COLORS.headerBackground, height: 70 },
+      headerShadowVisible: false,
+    });
+  }, [navigation]);
+
+  // Microsoft login request configuration (⚠️ kept for later use)
+  /*
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
-      //client id from azure app 
       clientId: 'your-microsoft-client-id',
-      //generates URI that micrsft will redirect after login
-      
       redirectUri: AuthSession.makeRedirectUri(),
-
       scopes: ['openid', 'profile', 'email'],
-
-      //returns id token containing user info
-      //contains verified idenity credentials
       responseType: 'id_token',
-    
     },
     {
-      authorizationEndpoint: 'https://login.microsoftonline.com/calstatela.edu/oauth2/v2.0/authorize',
+      authorizationEndpoint:
+        'https://login.microsoftonline.com/calstatela.edu/oauth2/v2.0/authorize',
     }
   );
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      setLoadingSSO(false);
+      navigation.replace('Register');
+    } else if (response?.type === 'error' || response?.type === 'dismiss') {
+      setLoadingSSO(false);
+    }
+  }, [response, navigation]);
+  */
 
   // Redirect to main app if user is already logged in
   useEffect(() => {
@@ -47,53 +64,140 @@ export default function LoginPage({navigation}: Properties){
     }
   }, [user, navigation]);
 
-  useEffect(() => {
-    if (response?.type === 'success'){
-      navigation.replace('Register');
-    }
-  }, [response, navigation]);
+  return (
+    <View style={styles.screen}>
+      <View style={styles.card}>
+        <Text style={styles.title}>Login</Text>
+        <Text style={styles.subtitle}>
+          Use your Cal State LA credentials or continue with a regular account.
+        </Text>
 
-return (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-    
-    <Text style={{ fontSize: 28, marginBottom: 30 }}>Login</Text>
+        {/* Microsoft SSO (⚠️ placeholder for later use) */}
+        {/*
+        <ThemedButton
+          label={loadingSSO ? 'Connecting…' : 'Login with Microsoft'}
+          onPress={async () => {
+            setLoadingSSO(true);
+            await promptAsync();
+          }}
+          disabled={!request || loadingSSO}
+        />
+        */}
 
-    <Button
-      title="Login with Microsoft"
-      disabled={!request} 
-      // Prevent clicking button before AuthSession request is ready
-      onPress={() => promptAsync()}
-      // promptAsync launches the Microsoft login flow in a browser
-    />
+        {/* Regular login */}
+        <ThemedButton
+          label="Regular Log in"
+          onPress={() => navigation.replace('RegLogin')}
+        />
 
-    <View style={{ height: 20 }} />
+        {/* Create account */}
+        <ThemedButton
+          label="Create an account"
+          onPress={() => navigation.replace('Register')}
+        />
 
-    <Button
-    title="Regular Log in" 
-    onPress={() => navigation.replace('RegLogin')}
+        {/* Divider */}
+        <View style={styles.divider} />
 
-    />
-
-    <View style={{ height: 20 }} />
-   
-
-    <Button
-      title="Register"
-      onPress={() => navigation.replace('Register')}
-     
-    />
-
-    <View style={{ height: 40, borderBottomWidth: 1, borderBottomColor: '#ccc', width: '80%', marginVertical: 20 }} />
-
-      <Button
-        title="DEV: Quick Access to Main App"
-        onPress={() => {
-          // For development only - bypass authentication
-          console.log("DEV: Bypassing authentication");
-          navigation.replace('Main');
-        }}
-        color="#28a745" // Green color to distinguish it as a dev tool
-      />
-  </View>
-);
+        {/* Dev shortcut */}
+        <ThemedButton
+          label="DEV: Quick Access to Main App"
+          onPress={() => navigation.replace('Main')}
+        />
+      </View>
+    </View>
+  );
 }
+
+/** Reusable yellow button component */
+function ThemedButton({
+  label,
+  onPress,
+  disabled,
+  leftAddon,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  leftAddon?: React.ReactNode;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      hitSlop={8}
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [
+        styles.btn,
+        { opacity: disabled ? 0.6 : pressed ? 0.85 : 1 },
+      ]}
+    >
+      {leftAddon ? <View style={styles.leftAddon}>{leftAddon}</View> : null}
+      <Text style={styles.btnText}>{label}</Text>
+    </Pressable>
+  );
+}
+
+const MAX_WIDTH = 640;
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  card: {
+    width: '100%',
+    maxWidth: MAX_WIDTH,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    paddingVertical: 28,
+    paddingHorizontal: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.black,
+        shadowOpacity: 0.08,
+        shadowOffset: { width: 0, height: 6 },
+        shadowRadius: 16,
+      },
+      android: { elevation: 6 },
+    }),
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#5b6670',
+    textAlign: 'center',
+    marginTop: 6,
+    marginBottom: 24,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginVertical: 20,
+  },
+  btn: {
+    minHeight: 48,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    marginVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    backgroundColor: COLORS.buttonPrimaryBackground,
+  },
+  btnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.buttonPrimaryText,
+  },
+  leftAddon: { marginRight: 8 },
+});
