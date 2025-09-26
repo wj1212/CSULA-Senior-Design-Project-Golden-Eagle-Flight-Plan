@@ -45,5 +45,17 @@ async function update(collectionName = 'testCollection', query, data) {
   const collection = db.collection(collectionName);
   return await collection.updateOne(query, { $set: data });
 }
+//https://www.mongodb.com/docs/drivers/node/current/crud/query/retrieve/
+//function to find one documment that matches the users credentials
+//define query so we don't get an empty object 
+async function findOne(collectionName = 'users', query = {}){
 
-export default { connect, close, insert, find, update };
+  //grab collection called 'users'
+  const collection = db.collection(collectionName);
+  //findOne() finds matching documment
+  return await collection.findOne(query);
+
+
+}
+
+export default { connect, close, insert, find, update, findOne };

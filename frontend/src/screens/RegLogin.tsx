@@ -1,17 +1,44 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { COLORS } from "../constants/colors";
 import { SPACING } from "../constants/spacing";
 
-export default function RegLogin() {
+export default function RegLogin({ navigation }: any ) {
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
-    console.log("Login:", { email, password });
-    
-  };
+ const [email, setEmail] = useState("");
+ const [password, setPassword] = useState("");
+
+
+ const handleLogin = async () => {
+
+try {
+  const res = await fetch("http://localhost:4000/login-user", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  //parses the server response as JSON.
+  //data  holds the object returned from  backend like  message: "Login successful",
+
+  const data = await res.json();
+  console.log("Response:", data);
+
+
+  if (!res.ok) {
+
+                                           
+    Alert.alert("Login Failed", data.message);
+    return;
+  }
+
+  navigation.replace("Main");
+} catch (err) {
+  console.error("error:", err);
+  Alert.alert("Error", "Cannot connect to server");
+}
+};
 
   return (
     <View style={styles.container}>
