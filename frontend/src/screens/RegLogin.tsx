@@ -1,20 +1,41 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { COLORS } from "../constants/colors";
 import { SPACING } from "../constants/spacing";
+import type { RootStackParamList } from "../../App";
+
+type Nav = NativeStackNavigationProp<RootStackParamList, "RegLogin">;
 
 export default function RegLogin() {
-
+  const navigation = useNavigation<Nav>();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = () => {
     console.log("Login:", { email, password });
-    
+  };
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      // fallback if there’s no stack (because of replace)
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    }
   };
 
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <Text style={styles.backButtonText}>← Back</Text>
+      </TouchableOpacity>
+
       <Text style={styles.title}>Login</Text>
 
       <TextInput
@@ -33,7 +54,6 @@ export default function RegLogin() {
         onChangeText={setPassword}
       />
 
-
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
@@ -48,6 +68,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: SPACING.xl,
     backgroundColor: COLORS.background,
+  },
+  backButton: {
+    position: "absolute",
+    top: 50, 
+    left: 20,
+    padding: 10,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: COLORS.text,
   },
   title: {
     fontSize: 28,
@@ -72,7 +102,7 @@ const styles = StyleSheet.create({
     borderRadius: SPACING.sm,
     marginTop: SPACING.md,
     width: "100%",
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonText: {
     color: COLORS.buttonPrimaryText, // Black
