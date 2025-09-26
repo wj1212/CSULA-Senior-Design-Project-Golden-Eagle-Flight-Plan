@@ -1,16 +1,49 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from "../constants/colors";
 import { SPACING } from "../constants/spacing";
+import { StackScreenProps } from '@react-navigation/stack';
+import { RootStackParamList } from '../../App';
 
-export default function RegLogin() {
+type Properties = StackScreenProps<RootStackParamList, 'RegLogin'>;
 
+export default function RegLogin({ navigation }: Properties) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    console.log("Login:", { email, password });
-    
+  const { login } = useAuth();
+
+  const handleLogin = async () => {
+    // Basic validation
+    if (!email.trim()) {
+      Alert.alert("Error", "Please enter your email");
+      return;
+    }
+
+    if (!password) {
+      Alert.alert("Error", "Please enter your password");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await login(email.trim().toLowerCase(), password);
+
+      if (result.success) {
+        console.log("Login successful, navigating to Main");
+        navigation.replace('Main');
+      } else {
+        console.log("Login failed:", result.error);
+        Alert.alert("Error", result.error || "Login failed");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,8 +67,14 @@ export default function RegLogin() {
       />
 
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
+      <TouchableOpacity 
+        style={[styles.button, loading && styles.buttonDisabled]} 
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? "Signing In..." : "Login"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -78,5 +117,8 @@ const styles = StyleSheet.create({
     color: COLORS.buttonPrimaryText, // Black
     fontWeight: "bold",
     fontSize: 16,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });

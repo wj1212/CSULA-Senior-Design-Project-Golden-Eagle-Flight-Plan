@@ -1,15 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
 import { Dropdown } from "react-native-element-dropdown";
+import { useAuth } from '../contexts/AuthContext';
 
 import { COLORS } from "../constants/colors";
 import { SPACING } from "../constants/spacing";
@@ -38,16 +40,32 @@ const TIME_SLOTS = [
 ];
 
 export default function ProfileScreen() {
-  const [gradeLevel, setGradeLevel] = useState("Sophomore");
-  const [major, setMajor] = useState("Computer Science");
-  const [degreeType, setDegreeType] = useState("Bachelor");
+  const { user, updateProfile, refreshProfile } = useAuth();
+  const [loading, setLoading] = useState(false);
+  
+  const [gradeLevel, setGradeLevel] = useState(user?.gradeLevel || "Freshman");
+  const [major, setMajor] = useState(user?.major || "");
+  const [degreeType, setDegreeType] = useState(user?.degreeType || "Bachelor");
 
-  const [completedCourses, setCompletedCourses] = useState<string[]>([]);
-  const [careerInterests, setCareerInterests] = useState<string[]>([]);
-  const [disabilities, setDisabilities] = useState<string[]>([]);
+  const [completedCourses, setCompletedCourses] = useState<string[]>(user?.completedCourses || []);
+  const [careerInterests, setCareerInterests] = useState<string[]>(user?.careerInterests || []);
+  const [disabilities, setDisabilities] = useState<string[]>(user?.disabilities || []);
   const [availability, setAvailability] = useState<
     { day: string; slot: string }[]
-  >([]);
+  >(user?.availability || []);
+
+  // Load user data when component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      setGradeLevel(user.gradeLevel || "Freshman");
+      setMajor(user.major || "");
+      setDegreeType(user.degreeType || "Bachelor");
+      setCompletedCourses(user.completedCourses || []);
+      setCareerInterests(user.careerInterests || []);
+      setDisabilities(user.disabilities || []);
+      setAvailability(user.availability || []);
+    }
+  }, [user]);
 
   const toggleCourse = (course: string) => {
     setCompletedCourses((prev) =>
@@ -82,23 +100,53 @@ export default function ProfileScreen() {
     );
   };
 
-  const handleSave = () => {
-    console.log("Saved profile", {
-      gradeLevel,
-      major,
-      degreeType,
-      completedCourses,
-      careerInterests,
-      disabilities,
-      availability,
-    });
+  const handleSave = async () => {
+    setLoading(true);
+    
+    try {
+      const profileData = {
+        gradeLevel,
+        major,
+        degreeType,
+        completedCourses,
+        careerInterests,
+        disabilities,
+        availability,
+      };
+
+      const result = await updateProfile(profileData);
+      
+      if (result.success) {
+        Alert.alert("Success", "Profile saved successfully!");
+      } else {
+        Alert.alert("Error", result.error || "Failed to save profile");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDiscard = () => {
-    setCompletedCourses([]);
-    setCareerInterests([]);
-    setDisabilities([]);
-    setAvailability([]);
+    // Reset to user's saved data
+    if (user) {
+      setGradeLevel(user.gradeLevel || "Freshman");
+      setMajor(user.major || "");
+      setDegreeType(user.degreeType || "Bachelor");
+      setCompletedCourses(user.completedCourses || []);
+      setCareerInterests(user.careerInterests || []);
+      setDisabilities(user.disabilities || []);
+      setAvailability(user.availability || []);
+    } else {
+      setGradeLevel("Freshman");
+      setMajor("");
+      setDegreeType("Bachelor");
+      setCompletedCourses([]);
+      setCareerInterests([]);
+      setDisabilities([]);
+      setAvailability([]);
+    }
   };
 
   return (
@@ -249,14 +297,18 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={[styles.button, styles.discard]}
             onPress={handleDiscard}
+            disabled={loading}
           >
             <Text style={styles.buttonText}>Discard</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.button, styles.save]}
+            style={[styles.button, styles.save, loading && styles.buttonDisabled]}
             onPress={handleSave}
+            disabled={loading}
           >
-            <Text style={[styles.buttonText, styles.saveText]}>Save</Text>
+            <Text style={[styles.buttonText, styles.saveText]}>
+              {loading ? "Saving..." : "Save"}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -349,4 +401,7 @@ const styles = StyleSheet.create({
   discard: { backgroundColor: "#ddd" },
   buttonText: { fontSize: 16, fontWeight: "600", color: COLORS.text },
   saveText: { color: "#000" },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
 });

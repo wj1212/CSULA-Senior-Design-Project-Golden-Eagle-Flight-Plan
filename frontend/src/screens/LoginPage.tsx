@@ -5,6 +5,7 @@ import {View, Text, Button} from 'react-native';
 //can manage tokens, redirections, and communication
 // with external login
 import * as AuthSession from 'expo-auth-session';
+import { useAuth } from '../contexts/AuthContext';
 
 //TS type helper from react navigation
 import { StackScreenProps } from '@react-navigation/stack';
@@ -16,6 +17,8 @@ import { RootStackParamList } from '../../frontend/App';
 type Properties = StackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginPage({navigation}: Properties){
+  const { user } = useAuth();
+  
   //setting up the Microsoft OAuth request 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
@@ -37,20 +40,18 @@ export default function LoginPage({navigation}: Properties){
     }
   );
 
-
+  // Redirect to main app if user is already logged in
+  useEffect(() => {
+    if (user) {
+      navigation.replace('Main');
+    }
+  }, [user, navigation]);
 
   useEffect(() => {
     if (response?.type === 'success'){
       navigation.replace('Register');
     }
-
-
-
-  }, [response]// run 'useEffect' when response changes 
-
-
-
-);
+  }, [response, navigation]);
 
 return (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
@@ -86,7 +87,11 @@ return (
 
       <Button
         title="DEV: Quick Access to Main App"
-        onPress={() => navigation.replace('Main')}
+        onPress={() => {
+          // For development only - bypass authentication
+          console.log("DEV: Bypassing authentication");
+          navigation.replace('Main');
+        }}
         color="#28a745" // Green color to distinguish it as a dev tool
       />
   </View>

@@ -1,20 +1,72 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-import axios from "axios"
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/colors';
 import { SPACING } from '../constants/spacing';
+import { StackScreenProps } from '@react-navigation/stack';
+import { RootStackParamList } from '../../App';
+
+type Properties = StackScreenProps<RootStackParamList, 'Register'>;
 
 
-export default function Registration() {
+export default function Registration({ navigation }: Properties) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = () => {
- 
-   
-  
+  const { register } = useAuth();
+
+  const handleRegister = async () => {
+    // Basic validation
+    if (!name.trim()) {
+      Alert.alert("Error", "Please enter your name");
+      return;
+    }
+
+    if (!email.trim()) {
+      Alert.alert("Error", "Please enter your email");
+      return;
+    }
+
+    if (!password) {
+      Alert.alert("Error", "Please enter a password");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await register({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        confirmPassword,
+      });
+
+      if (result.success) {
+        console.log("Registration successful, navigating to Main");
+        navigation.replace('Main');
+      } else {
+        console.log("Registration failed:", result.error);
+        Alert.alert("Error", result.error || "Registration failed");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
   };
 
 
@@ -54,8 +106,14 @@ export default function Registration() {
         onChangeText={setConfirmPassword}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Register</Text>
+      <TouchableOpacity 
+        style={[styles.button, loading && styles.buttonDisabled]} 
+        onPress={handleRegister}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? "Creating Account..." : "Register"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -98,5 +156,8 @@ const styles = StyleSheet.create({
     color: COLORS.buttonPrimaryText, // Black
     fontWeight: "bold",
     fontSize: 16,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });
