@@ -1,13 +1,54 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Use localhost for development - Expo will handle the network routing
+// Detect if running on web
+const isWeb = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+
+// API Base URL (adjust LAN IP for mobile dev)
 const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:4000/api'
+  ? (isWeb ? 'http://localhost:4000/api' : 'http://192.168.0.147:4000/api') // replace with your PC LAN IP
   : 'https://your-production-backend-url.com/api';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 
-// Create axios instance with default config
+// Storage helpers
+export const getStoredToken = async (): Promise<string | null> => {
+  try {
+    if (isWeb) {
+      return localStorage.getItem('authToken');
+    } else {
+      return await AsyncStorage.getItem('authToken');
+    }
+  } catch {
+    return null;
+  }
+};
+
+export const setStoredToken = async (token: string): Promise<void> => {
+  try {
+    if (isWeb) {
+      localStorage.setItem('authToken', token);
+    } else {
+      await AsyncStorage.setItem('authToken', token);
+    }
+  } catch (error) {
+    console.error('Error storing token:', error);
+  }
+};
+
+export const clearStoredToken = async (): Promise<void> => {
+  try {
+    if (isWeb) {
+      localStorage.removeItem('authToken');
+    } else {
+      await AsyncStorage.removeItem('authToken');
+    }
+  } catch (error) {
+    console.error('Error clearing token:', error);
+  }
+};
+
+// Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -15,61 +56,36 @@ const api = axios.create({
   },
 });
 
-// Add token to requests if available
-api.interceptors.request.use((config) => {
-  const token = getStoredToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  console.log('Making API request to:', config.url);
-  console.log('Request config:', config);
-  return config;
-});
+// Attach token to requests
+api.interceptors.request.use(
+  async (config) => {
+    const token = await getStoredToken();
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    console.log('Making API request to:', config.url);
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-// Handle token expiration
+// Handle expired token responses
 api.interceptors.response.use(
   (response) => {
     console.log('API response received:', response.status, response.data);
     return response;
   },
-  (error) => {
+  async (error) => {
     console.error('API request failed:', error.message);
     console.error('Error details:', error.response?.data);
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      clearStoredToken();
-      // You might want to redirect to login here
+      await clearStoredToken();
     }
     return Promise.reject(error);
   }
 );
 
-// Token management
-export const getStoredToken = (): string | null => {
-  try {
-    return localStorage.getItem('authToken');
-  } catch {
-    return null;
-  }
-};
-
-export const setStoredToken = (token: string): void => {
-  try {
-    localStorage.setItem('authToken', token);
-  } catch (error) {
-    console.error('Error storing token:', error);
-  }
-};
-
-export const clearStoredToken = (): void => {
-  try {
-    localStorage.removeItem('authToken');
-  } catch (error) {
-    console.error('Error clearing token:', error);
-  }
-};
-
-// Auth API calls
+// Auth API service
 export const authService = {
   // Register user
   register: async (userData: {
@@ -80,21 +96,11 @@ export const authService = {
   }) => {
     try {
       console.log('Sending registration request to:', API_BASE_URL + '/auth/register');
-      console.log('Registration data:', { ...userData, password: '[HIDDEN]' });
-      
       const response = await api.post('/auth/register', userData);
-      console.log('Registration response:', response.data);
-      
       const { token, user } = response.data;
-      
-      if (token) {
-        setStoredToken(token);
-      }
-      
+      if (token) await setStoredToken(token);
       return { success: true, user, token };
     } catch (error: any) {
-      console.error('Registration API error:', error);
-      console.error('Error response:', error.response?.data);
       return {
         success: false,
         error: error.response?.data?.error || error.message || 'Registration failed',
@@ -106,21 +112,11 @@ export const authService = {
   login: async (credentials: { email: string; password: string }) => {
     try {
       console.log('Sending login request to:', API_BASE_URL + '/auth/login');
-      console.log('Login credentials:', { ...credentials, password: '[HIDDEN]' });
-      
       const response = await api.post('/auth/login', credentials);
-      console.log('Login response:', response.data);
-      
       const { token, user } = response.data;
-      
-      if (token) {
-        setStoredToken(token);
-      }
-      
+      if (token) await setStoredToken(token);
       return { success: true, user, token };
     } catch (error: any) {
-      console.error('Login API error:', error);
-      console.error('Error response:', error.response?.data);
       return {
         success: false,
         error: error.response?.data?.error || error.message || 'Login failed',
@@ -177,8 +173,8 @@ export const authService = {
   },
 
   // Logout
-  logout: () => {
-    clearStoredToken();
+  logout: async () => {
+    await clearStoredToken();
     return { success: true };
   },
 };

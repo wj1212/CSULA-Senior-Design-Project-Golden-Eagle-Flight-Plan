@@ -74,7 +74,9 @@ export default function Registration() {
       });
     }
   };
-
+  
+  const [role, setRole] = useState<"student" | "advisor">("student");
+  
   return (
     <View style={styles.container}>
       {/* Back Button */}
@@ -83,6 +85,28 @@ export default function Registration() {
       </TouchableOpacity>
 
       <Text style={styles.title}>Sign Up</Text>
+
+      
+      <View style={styles.roleRow}>
+        <TouchableOpacity
+          style={[styles.roleButton, role === "student" && styles.roleButtonActive]}
+          onPress={() => setRole("student")}
+        >
+          <Text style={[styles.roleText, role === "student" && styles.roleTextActive]}>
+            Student
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.roleButton, role === "advisor" && styles.roleButtonActive]}
+          onPress={() => setRole("advisor")}
+        >
+          <Text style={[styles.roleText, role === "advisor" && styles.roleTextActive]}>
+            Advisor
+          </Text>
+        </TouchableOpacity>
+      </View>
+      
 
       <TextInput
         style={styles.input}
@@ -141,6 +165,37 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xxxl,
     color: COLORS.text,
   },
+
+ 
+  roleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: SPACING.lg,
+  },
+  roleButton: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: SPACING.sm,
+    backgroundColor: COLORS.background,
+    marginRight: SPACING.md,
+  },
+  roleButtonActive: {
+    backgroundColor: COLORS.buttonPrimaryBackground,
+    borderColor: COLORS.buttonPrimaryBackground,
+  },
+  roleText: {
+    color: COLORS.text,
+    fontWeight: "600",
+  },
+  roleTextActive: {
+    color: COLORS.buttonPrimaryText,
+  },
+
+
   input: {
     width: "100%",
     height: 50,
