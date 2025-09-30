@@ -26,7 +26,13 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 // Reusable header options for auth screens
 const authHeaderOptions = {
   headerShown: true,
-  headerStyle: { backgroundColor: '#000' },
+  headerStyle: {
+    backgroundColor: '#000',
+    height: 60,
+    marginHorizontal: 20,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
   headerTitleAlign: 'center' as const,
   headerShadowVisible: false,
   headerLeft: () => <View style={{ width: 85 }} />,
@@ -34,7 +40,7 @@ const authHeaderOptions = {
   headerTitle: () => (
     <Image
       source={require('../assets/logo-b.png')}
-      style={{ width: 160, height: 51, resizeMode: 'contain' }}
+      style={{ width: 160, height: 51, resizeMode: 'contain'}}
     />
   ),
 };

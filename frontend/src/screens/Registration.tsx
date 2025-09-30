@@ -6,6 +6,7 @@ import { SPACING } from "../constants/spacing";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
+import { Footer } from '../components/Footer';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Register">;
 
@@ -150,6 +151,7 @@ export default function Registration() {
 }
 
 const styles = StyleSheet.create({
+  
   container: {
     flex: 1,
     justifyContent: "center",
@@ -222,5 +224,33 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+
+    footerContainer: {
+    position: 'absolute', // This makes it stick to the bottom
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingBottom: SPACING.xxl, // Give it some space from the edge
+  },
+  footerDivider: {
+    height: 1,
+    width: '35%', // Adjust width as needed
+    backgroundColor: '#4A4A4A', // A subtle gray color
+    marginBottom: SPACING.lg,
+  },
+  footerLogo: {
+    fontSize: 26,
+    fontWeight: '600',
+    color: COLORS.white,
+    // For the script font, you'd need to install a custom font file
+    // For now, a bold style will look good
+    fontStyle: 'italic', 
+    marginBottom: SPACING.lg,
+  },
+  copyrightText: {
+    fontSize: 12,
+    color: '#888888', // A lighter gray for the copyright
   },
 });

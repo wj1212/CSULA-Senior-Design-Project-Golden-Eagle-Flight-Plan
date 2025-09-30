@@ -25,8 +25,10 @@ export const HomeScreen: React.FC = () => {
   const handleCareerPress = () => console.log('Career Press');
   const handleLeadershipPress = () => console.log('Leadership Press');
   const sidePadding = SPACING.xl * 2;
-  const spacingBetweenCircles = SPACING.sm * 2;
-  const circleSize = (width - sidePadding - spacingBetweenCircles) / 3;
+  const spacingBetweenCircles = SPACING.lg * 2;
+  const dynamicSize = (width - sidePadding - spacingBetweenCircles) / 3;
+  const maxSize = 300;
+  const circleSize = Math.min(dynamicSize, maxSize);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -148,9 +150,10 @@ const styles = StyleSheet.create({
   },
   circleNavContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     marginVertical: SPACING.xxxl,
+    gap: SPACING.xxl, 
   },
   section: {
     marginBottom: SPACING.xl,
