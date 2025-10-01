@@ -18,6 +18,7 @@ import { CircleButton } from '../components/CircleButton';
 import { COLORS } from '../constants/colors';
 import { SPACING } from '../constants/spacing';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../contexts/AuthContext';
 
 export const HomeScreen: React.FC = () => {
   const { width } = useWindowDimensions();
@@ -27,6 +28,16 @@ export const HomeScreen: React.FC = () => {
   const sidePadding = SPACING.xl * 2;
   const spacingBetweenCircles = SPACING.sm * 2;
   const circleSize = (width - sidePadding - spacingBetweenCircles) / 3;
+  const { user, loading } = useAuth();
+
+  const displayUser = user;
+  if (loading) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Loading...</Text>
+    </SafeAreaView>
+  );
+}
 
   return (
     <SafeAreaView style={styles.container}>
@@ -38,7 +49,7 @@ export const HomeScreen: React.FC = () => {
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
           <View style={styles.contentContainer}>
             <Text style={styles.title}>
-              Welcome back, {mockUser.name.split(' ')[0]}!
+              Welcome back, {displayUser?.name?.split(" ")[0] ?? "Student"}!
             </Text>
 
             <View style={styles.circleNavContainer}>

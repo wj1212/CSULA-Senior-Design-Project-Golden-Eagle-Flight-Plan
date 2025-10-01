@@ -10,11 +10,14 @@ import { CommonActions } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import { SPACING } from '../constants/spacing';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../contexts/AuthContext';  // ✅ import auth context
 
 const Tab = createBottomTabNavigator<NavigationScreens>();
 
 export const BottomTabNavigator: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const { logout } = useAuth(); // ✅ get logout function
+
   return (
     <Tab.Navigator
       screenOptions={({ navigation, route }) => ({
@@ -88,14 +91,15 @@ export const BottomTabNavigator: React.FC = () => {
           ),
           headerRight: () => (
             <TouchableOpacity
-              onPress={() =>
+              onPress={() => {
+                logout(); // ✅ clear token + reset user
                 navigation.dispatch(
                   CommonActions.reset({
                     index: 0,
                     routes: [{ name: 'Login' }],
                   })
-                )
-              }
+                );
+              }}
               style={[styles.headerButtonPrimary, { marginRight: SPACING.md }]}
             >
               <Text style={styles.headerButtonPrimaryText}>Logout</Text>

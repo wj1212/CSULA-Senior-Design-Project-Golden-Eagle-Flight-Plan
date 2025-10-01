@@ -1,233 +1,105 @@
-import express from 'express';
-import mongo from '../db.js';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import express from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
+import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Register
-router.post('/register', async (req, res) => {
+// REGISTER
+router.post("/register", async (req, res) => {
   try {
-    console.log('Registration request received:', req.body);
-    const { name, email, password, confirmPassword } = req.body;
+    const { name, email, password } = req.body;
 
-    // Validation
-    if (!name || !email || !password || !confirmPassword) {
-      console.log('Validation failed: missing fields');
-      return res.status(400).json({ error: 'All fields are required' });
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: "Email already registered" });
     }
 
-    if (password !== confirmPassword) {
-      return res.status(400).json({ error: 'Passwords do not match' });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    }
-
-    // Check if user already exists
-    console.log('Checking for existing user with email:', email);
-    const cursor = await mongo.find('users', { email });
-    const existingUser = await cursor.toArray();
-    console.log('Existing users found:', existingUser.length);
-    if (existingUser.length > 0) {
-      return res.status(400).json({ error: 'User already exists with this email' });
-    }
-
-    // Hash password
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashed = await bcrypt.hash(password, salt);
 
-    // Create new user
-    const userData = {
+    const newUser = new User({
       name,
       email,
-      password: hashedPassword,
-      gradeLevel: 'Freshman',
-      major: '',
-      degreeType: 'Bachelor',
-      completedCourses: [],
-      currentCourses: [],
-      careerInterests: [],
-      disabilities: [],
-      availability: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+      password: hashed,
+    });
 
-    const result = await mongo.insert('users', userData);
-    const userId = result.insertedId;
+    await newUser.save();
 
-    // Generate token
-    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-    const token = jwt.sign({ userId: userId.toString() }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET || "secret", {
+      expiresIn: "7d",
+    });
 
     res.status(201).json({
-      message: 'User created successfully',
+      message: "User registered",
       token,
       user: {
-        id: userId,
-        name: userData.name,
-        email: userData.email,
-        gradeLevel: userData.gradeLevel,
-        major: userData.major,
-        degreeType: userData.degreeType
-      }
+        id: newUser._id,
+        uname: newUser.name,
+        email: newUser.email,
+      },
     });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Server error during registration' });
+  } catch (err) {
+    console.error("Register error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-// Login
-router.post('/login', async (req, res) => {
+// LOGIN
+router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Find user
-    const users = await mongo.find('users', { email }).toArray();
-    if (users.length === 0) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
-
-    const user = users[0];
-
-    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Generate token
-    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-    const token = jwt.sign({ userId: user._id.toString() }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || "secret", {
+      expiresIn: "7d",
+    });
 
     res.json({
-      message: 'Login successful',
       token,
       user: {
         id: user._id,
-        name: user.name,
+        uname: user.name,
         email: user.email,
-        gradeLevel: user.gradeLevel,
-        major: user.major,
-        degreeType: user.degreeType
-      }
+      },
     });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Server error during login' });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-// Get user profile
-router.get('/profile', async (req, res) => {
+
+// PROFILE - returns current user (protected)
+router.get('/profile', authenticateToken, async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ error: 'Access token required' });
+    if (!req.user) {
+      return res.status(404).json({ error: 'User not found' });
     }
-
-    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-    const decoded = jwt.verify(token, JWT_SECRET);
-    
-    const users = await mongo.find('users', { _id: new mongo.ObjectId(decoded.userId) }).toArray();
-    if (users.length === 0) {
-      return res.status(401).json({ error: 'User not found' });
-    }
-
-    const user = users[0];
-    delete user.password;
-
-    res.json({
-      user
-    });
+    res.json({ user: req.user });
   } catch (error) {
-    console.error('Profile fetch error:', error);
-    res.status(500).json({ error: 'Server error fetching profile' });
+    console.error('Profile error:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Update user profile
-router.put('/profile', async (req, res) => {
+// VERIFY - simple token check (protected)
+router.get('/verify', authenticateToken, async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ error: 'Access token required' });
-    }
-
-    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-    const decoded = jwt.verify(token, JWT_SECRET);
-    
-    const {
-      gradeLevel,
-      major,
-      degreeType,
-      completedCourses,
-      currentCourses,
-      careerInterests,
-      disabilities,
-      availability
-    } = req.body;
-
-    const updateData = { updatedAt: new Date() };
-    
-    if (gradeLevel) updateData.gradeLevel = gradeLevel;
-    if (major) updateData.major = major;
-    if (degreeType) updateData.degreeType = degreeType;
-    if (completedCourses) updateData.completedCourses = completedCourses;
-    if (currentCourses) updateData.currentCourses = currentCourses;
-    if (careerInterests) updateData.careerInterests = careerInterests;
-    if (disabilities) updateData.disabilities = disabilities;
-    if (availability) updateData.availability = availability;
-
-    await mongo.update('users', { _id: new mongo.ObjectId(decoded.userId) }, updateData);
-
-    const users = await mongo.find('users', { _id: new mongo.ObjectId(decoded.userId) }).toArray();
-    const user = users[0];
-    delete user.password;
-
-    res.json({
-      message: 'Profile updated successfully',
-      user
-    });
+    res.json({ success: true, user: req.user });
   } catch (error) {
-    console.error('Profile update error:', error);
-    res.status(500).json({ error: 'Server error updating profile' });
-  }
-});
-
-// Verify token
-router.get('/verify', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ error: 'Access token required' });
-    }
-
-    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-    const decoded = jwt.verify(token, JWT_SECRET);
-    
-    const users = await mongo.find('users', { _id: new mongo.ObjectId(decoded.userId) }).toArray();
-    if (users.length === 0) {
-      return res.status(401).json({ error: 'User not found' });
-    }
-
-    const user = users[0];
-    delete user.password;
-
-    res.json({
-      valid: true,
-      user
-    });
-  } catch (error) {
-    res.status(401).json({ error: 'Invalid token' });
+    console.error('Verify error:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

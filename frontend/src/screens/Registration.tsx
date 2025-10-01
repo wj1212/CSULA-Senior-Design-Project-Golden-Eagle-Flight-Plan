@@ -51,8 +51,12 @@ export default function Registration() {
       });
 
       if (result.success) {
-        console.log("Registration successful, navigating to Main");
-        navigation.replace("Main");
+        // Show alert first
+        Alert.alert("Success", "Account created! Please log in.");
+        console.log("Success: Account created! Please log in.");
+
+        // Then navigate immediately after
+        navigation.replace("RegLogin");;
       } else {
         console.log("Registration failed:", result.error);
         Alert.alert("Error", result.error || "Registration failed");

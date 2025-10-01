@@ -92,7 +92,7 @@ export const authService = {
     name: string;
     email: string;
     password: string;
-    confirmPassword: string;
+    //confirmPassword: string;
   }) => {
     try {
       console.log('Sending registration request to:', API_BASE_URL + '/auth/register');
