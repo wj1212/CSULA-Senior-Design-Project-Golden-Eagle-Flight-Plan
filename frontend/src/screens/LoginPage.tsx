@@ -2,10 +2,9 @@ import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform, Image, ImageBackground, Dimensions } from 'react-native';
 // import * as AuthSession from 'expo-auth-session'; // 🔒 keep for future Microsoft login
 import { useAuth } from '../contexts/AuthContext';
-
 // TS type helper from react navigation
 import { StackScreenProps } from '@react-navigation/stack';
-import { RootStackParamList } from '../..//App';
+import { RootStackParamList } from '../../App';
 import { COLORS } from '../constants/colors';
 import { SPACING } from '../constants/spacing';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -51,14 +50,78 @@ export default function LoginPage({ navigation }: Properties) {
     }
   }, [user, navigation]);
 
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.webContainer}>
+        <ImageBackground
+          source={require('../../../assets/wallpaper-a.jpg')}
+          style={styles.blurredBackground}
+          resizeMode="cover"
+          blurRadius={15}
+        />
+        <ImageBackground
+          source={require('../../../assets/wallpaper-a.jpg')}
+          style={styles.backgroundImage}
+          imageStyle={styles.backgroundImageInner}
+          resizeMode="contain"
+        >
+          <SafeAreaView style={styles.safeArea} edges={['right', 'bottom', 'left']}>
+            <View style={styles.screen}>
+              <View style={styles.card}>
+                <Text style={styles.title}>Login</Text>
+                <Text style={styles.subtitle}>
+                  Use your Cal State LA credentials or continue with a regular account.
+                </Text>
+
+                {/* Microsoft SSO (⚠️ placeholder for later use) */}
+                {/*
+            <ThemedButton
+              label={loadingSSO ? 'Connecting…' : 'Login with Microsoft'}
+              onPress={async () => {
+                setLoadingSSO(true);
+                await promptAsync();
+              }}
+              disabled={!request || loadingSSO}
+            />
+            */}
+
+                {/* Regular login */}
+                <ThemedButton
+                  label="Regular Log in"
+                  onPress={() => navigation.replace('RegLogin')}
+                />
+
+                {/* Create account */}
+                <ThemedButton
+                  label="Create an account"
+                  onPress={() => navigation.replace('Register')}
+                />
+
+                {/* Divider */}
+                <View style={styles.divider} />
+
+                {/* Dev shortcut */}
+                <ThemedButton
+                  label="DEV: Quick Access to Main App"
+                  onPress={() => navigation.replace('Main')}
+                />
+              </View>
+              <Footer />
+            </View>
+          </SafeAreaView>
+        </ImageBackground>
+
+      </View>
+    );
+  }
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ImageBackground
-        source={require('../../../assets/wallpaper-a.jpg')}
-        style={styles.backgroundImage}
-        imageStyle={styles.backgroundImageInner}
-        resizeMode="cover"
-      >
+    <ImageBackground
+      source={require('../../../assets/wallpaper-a.jpg')}
+      style={styles.backgroundImage}
+      imageStyle={styles.backgroundImageInner}
+      resizeMode="contain"
+    >
+      <SafeAreaView style={styles.safeArea} edges={['right', 'bottom', 'left']}>
         <View style={styles.screen}>
           <View style={styles.card}>
             <Text style={styles.title}>Login</Text>
@@ -99,11 +162,10 @@ export default function LoginPage({ navigation }: Properties) {
               onPress={() => navigation.replace('Main')}
             />
           </View>
-          {/* --- Footer --- */}
           <Footer />
         </View>
-      </ImageBackground>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
@@ -142,7 +204,6 @@ const MAX_WIDTH = 560;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.headerBackground,
   },
   backgroundImage: {
     flex: 1,
@@ -150,55 +211,62 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   backgroundImageInner: {
-    resizeMode: 'cover', // Ensures inner image covers without distortion issues
+    resizeMode: 'cover',
   },
   screen: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    paddingBottom: 150,
+    paddingBottom: Platform.OS === 'web' ? 180 : 220,
   },
   card: {
     width: '90%',
     maxWidth: MAX_WIDTH,
     backgroundColor: '#FAF9F6',
-    borderRadius: 24, // Increased for softer, more modern look
-    paddingVertical: 20, // Slightly more padding for breathing room
+    borderRadius: 24,
+    paddingVertical: 20,
     paddingHorizontal: 24,
     ...Platform.select({
       ios: {
         shadowColor: COLORS.black,
-        shadowOpacity: 0.12, // Increased opacity for subtle depth
+        shadowOpacity: 0.12,
         shadowOffset: { width: 0, height: 8 },
         shadowRadius: 20,
       },
-      android: { elevation: 8 }, // Increased elevation for better shadow on Android
+      android: {
+        elevation: 8
+      },
+      web: {
+        boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.1)',
+        borderWidth: 1,
+        borderColor: '#EFEFEF',
+      }
     }),
   },
   title: {
-    fontSize: 32, // Slightly larger for emphasis
+    fontSize: 32,
     fontWeight: '700',
     color: COLORS.text,
     textAlign: 'center',
-    marginBottom: 8, // Added spacing for better flow
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 15, // Slightly larger for readability
+    fontSize: 15,
     color: '#5b6670',
     textAlign: 'center',
-    marginBottom: 28, // Increased bottom margin for separation
+    marginBottom: 28,
   },
   divider: {
     height: 1,
     backgroundColor: COLORS.border,
-    marginVertical: 24, // Slightly more space around divider
+    marginVertical: 24,
   },
   btn: {
-    minHeight: 52, // Taller buttons for better touch targets
-    borderRadius: 12, // Softer corners
-    paddingHorizontal: 20, // More horizontal padding
-    marginVertical: 6, // More space between buttons
+    minHeight: 52,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    marginVertical: 6,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -210,13 +278,41 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowRadius: 8,
       },
-      android: { elevation: 3 }, // Add subtle shadow to buttons
+      android: {
+        elevation: 3
+      },
+      web: {
+        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.08)',
+      }
     }),
   },
   btnText: {
-    fontSize: 17, // Larger text for better readability
+    fontSize: 17,
     fontWeight: '600',
     color: COLORS.buttonPrimaryText,
   },
-  leftAddon: { marginRight: 10 }, // Slightly more space for addons
+  leftAddon: {
+    marginRight: 10
+  },
+  webContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
+  },
+  blurredBackground: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  webMainContent: {
+    width: '100%',
+    height: '100%',
+    maxWidth: 600,
+    maxHeight: 900,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+  },
 });
