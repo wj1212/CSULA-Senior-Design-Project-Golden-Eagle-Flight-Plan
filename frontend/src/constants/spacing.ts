@@ -8,4 +8,9 @@ export const SPACING = {
   xl: 20,
   xxl: 24,
   xxxl: 32,
+  xxxxl: 40,
+  xxxxxl: 48,
+  huge: 56,
+  massive: 64,
+  giant: 80,
 };
