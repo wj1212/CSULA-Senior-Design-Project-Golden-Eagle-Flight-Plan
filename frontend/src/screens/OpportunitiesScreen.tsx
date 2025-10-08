@@ -1,26 +1,42 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  StyleSheet, 
+import { useMemo } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
   TouchableOpacity,
-  TextInput
+  TextInput,
+  Linking,
+  Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { OpportunityCard } from '../components/OpportunityCard';
 import { mockOpportunities } from '../data/mockData';
 import { COLORS } from '../constants/colors';
 import { SPACING } from '../constants/spacing';
+import { Opportunity } from '../types';
 
 export const OpportunitiesScreen: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState('All');
+  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const filters = ['All', 'Internships', 'Research', 'Leadership'];
+
+  const filteredOpportunities = useMemo(() => {
+    if (activeFilter === 'All') { return mockOpportunities; }
+    return mockOpportunities.filter((opp) => opp.type === activeFilter);
+  }, [activeFilter]);
+
+  const handleCardPress = async (url: string) => {
+    const supported = await Linking.canOpenURL(url);
+    if (supported) { await Linking.openURL(url); }
+    else { console.log(`Invalid URL provided: ${url}`); }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Opportunities</Text>
-      
+
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBox}>
@@ -34,9 +50,9 @@ export const OpportunitiesScreen: React.FC = () => {
       </View>
 
       {/* Filter Tabs */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
         style={styles.filterContainer}
       >
         {filters.map((filter) => (
@@ -60,16 +76,37 @@ export const OpportunitiesScreen: React.FC = () => {
 
       {/* Opportunities List */}
       <ScrollView style={styles.opportunitiesList}>
-        {mockOpportunities.map((opportunity) => (
-          <OpportunityCard 
-            key={opportunity.id} 
+        {filteredOpportunities.map((opportunity) => (
+          <OpportunityCard
+            key={opportunity.id}
             opportunity={opportunity}
-            onPress={() => {
-              console.log('Opportunity pressed:', opportunity.title);
-            }}
+            onApplyPress={() => handleCardPress(opportunity.link)}
+            onLearnMorePress={() => setSelectedOpportunity(opportunity)}
           />
         ))}
       </ScrollView>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={selectedOpportunity !== null} 
+        onRequestClose={() => setSelectedOpportunity(null)}
+      >
+        <View style={styles.modalCenteredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>{selectedOpportunity?.title}</Text>
+            <Text style={styles.modalCompany}>{selectedOpportunity?.company}</Text>
+            <Text style={styles.modalDescription}>{selectedOpportunity?.description}</Text>
+
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => setSelectedOpportunity(null)} 
+            >
+              <Text style={styles.modalButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -137,5 +174,53 @@ const styles = StyleSheet.create({
   },
   opportunitiesList: {
     flex: 1,
+  },
+  modalCenteredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalCompany: {
+    fontSize: 16,
+    color: '#64748b',
+    marginBottom: 15,
+  },
+  modalDescription: {
+    fontSize: 14,
+    textAlign: 'left',
+    marginBottom: 20,
+  },
+  modalButton: {
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.buttonPrimaryBackground,
+  },
+  modalButtonText: {
+    color: COLORS.buttonPrimaryText,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

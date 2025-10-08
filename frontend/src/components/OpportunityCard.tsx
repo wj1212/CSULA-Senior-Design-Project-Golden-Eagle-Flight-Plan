@@ -7,12 +7,14 @@ import { SPACING } from '../constants/spacing';
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
-  onPress?: () => void;
+  onApplyPress?: () => void;
+  onLearnMorePress?: () => void;
 }
 
-export const OpportunityCard: React.FC<OpportunityCardProps> = ({ 
-  opportunity, 
-  onPress 
+export const OpportunityCard: React.FC<OpportunityCardProps> = ({
+  opportunity,
+  onApplyPress,
+  onLearnMorePress
 }) => {
   const getIcon = (type: string) => {
     switch (type) {
@@ -41,13 +43,13 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
   };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.iconContainer}>
-          <Ionicons 
-            name={getIcon(opportunity.type) as any} 
-            size={24} 
-            color={getTypeColor(opportunity.type)} 
+          <Ionicons
+            name={getIcon(opportunity.type) as any}
+            size={24}
+            color={getTypeColor(opportunity.type)}
           />
         </View>
         <View style={styles.info}>
@@ -60,15 +62,16 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           <Text style={styles.matchLabel}>match</Text>
         </View>
       </View>
+
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.secondaryButton}>
+        <TouchableOpacity style={styles.secondaryButton} onPress={onLearnMorePress}>
           <Text style={styles.secondaryButtonText}>Learn More</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.primaryButton}>
+        <TouchableOpacity style={styles.primaryButton} onPress={onApplyPress}>
           <Text style={styles.primaryButtonText}>Apply</Text>
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 };
 
