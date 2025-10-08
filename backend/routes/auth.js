@@ -36,7 +36,7 @@ router.post("/register", async (req, res) => {
       token,
       user: {
         id: newUser._id,
-        uname: newUser.name,
+        name: newUser.name,
         email: newUser.email,
       },
     });
@@ -69,8 +69,17 @@ router.post("/login", async (req, res) => {
       token,
       user: {
         id: user._id,
-        uname: user.name,
+        name: user.name,
         email: user.email,
+        gradeLevel: user.gradeLevel,
+        major: user.major,
+        degreeType: user.degreeType,
+        completedCourses: user.completedCourses,
+        currentCourses: user.currentCourses,
+        careerInterests: user.careerInterests,
+        disabilities: user.disabilities,
+        availability: user.availability,
+        recommendedCourses: user.recommendedCourses,
       },
     });
   } catch (err) {
@@ -79,27 +88,49 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
-// PROFILE - returns current user (protected)
-router.get('/profile', authenticateToken, async (req, res) => {
+// PROFILE (GET)
+router.get("/profile", authenticateToken, async (req, res) => {
   try {
     if (!req.user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
     res.json({ user: req.user });
   } catch (error) {
-    console.error('Profile error:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error("Profile error:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-// VERIFY - simple token check (protected)
-router.get('/verify', authenticateToken, async (req, res) => {
+// UPDATE PROFILE (PUT)
+router.put("/profile", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const updates = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updates },
+      { new: true, runValidators: true, select: "-password" }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ message: "Profile updated successfully", user: updatedUser });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ error: "Failed to update profile" });
+  }
+});
+
+// VERIFY TOKEN
+router.get("/verify", authenticateToken, async (req, res) => {
   try {
     res.json({ success: true, user: req.user });
   } catch (error) {
-    console.error('Verify error:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error("Verify error:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 

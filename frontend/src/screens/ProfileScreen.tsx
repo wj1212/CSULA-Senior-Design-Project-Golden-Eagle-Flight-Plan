@@ -9,12 +9,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import Checkbox from "expo-checkbox";
 import { Dropdown } from "react-native-element-dropdown";
 import { useAuth } from '../contexts/AuthContext';
-
+import { RootStackParamList } from "../../App";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { COLORS } from "../constants/colors";
 import { SPACING } from "../constants/spacing";
+
+type Nav = NativeStackNavigationProp<RootStackParamList, "Profile">;
 
 // Mock data
 const COURSES = ["Math 101", "CS 201", "History 110", "Psych 150"];
@@ -40,6 +44,7 @@ const TIME_SLOTS = [
 ];
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<Nav>();
   const { user, updateProfile, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   
@@ -118,6 +123,7 @@ export default function ProfileScreen() {
       
       if (result.success) {
         Alert.alert("Success", "Profile saved successfully!");
+        navigation.replace("Main");
       } else {
         Alert.alert("Error", result.error || "Failed to save profile");
       }
