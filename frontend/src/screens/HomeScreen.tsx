@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   useWindowDimensions,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatCard } from '../components/StatCard';
@@ -19,11 +21,20 @@ import { COLORS } from '../constants/colors';
 import { SPACING } from '../constants/spacing';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
-
+import { Opportunity } from '../types';
 export const HomeScreen: React.FC = () => {
   const { width } = useWindowDimensions();
   const { user, loading } = useAuth();
+  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
 
+  const handleCardPress = async (url: string) => {
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      console.log(`Don't know how to open this URL: ${url}`);
+    }
+  };
   const handleAcademicPress = () => console.log('Academic Press');
   const handleCareerPress = () => console.log('Career Press');
   const handleLeadershipPress = () => console.log('Leadership Press');
@@ -66,16 +77,6 @@ export const HomeScreen: React.FC = () => {
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Recommended</Text>
-              {mockOpportunities.slice(0, 2).map((opportunity) => (
-                <OpportunityCard
-                  key={opportunity.id}
-                  opportunity={opportunity}
-                />
-              ))}
-            </View>
-
-            <View style={styles.section}>
               <Text style={styles.sectionTitle}>Recommended Courses - Fall 2025</Text>
               {mockCourses.map((course) => (
                 <View key={course.id} style={styles.courseCard}>
@@ -104,7 +105,18 @@ export const HomeScreen: React.FC = () => {
               <StatCard value={mockUser.credits} label="Credits Earned" />
               <StatCard value="73%" label="Degree Progress" />
             </View>
-
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Recommended Opportunities</Text>
+              {mockOpportunities.slice(0, 2).map((opportunity) => (
+                <OpportunityCard
+                  key={opportunity.id}
+                  opportunity={opportunity}
+                  // Add these two lines to pass the instructions down to the card
+                  onApplyPress={() => handleCardPress(opportunity.link)}
+                  onLearnMorePress={() => setSelectedOpportunity(opportunity)}
+                />
+              ))}
+            </View>
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
               <View style={styles.quickActions}>
@@ -136,6 +148,34 @@ export const HomeScreen: React.FC = () => {
           </View>
         </View>
       </KeyboardAvoidingView>
+      
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={selectedOpportunity !== null}
+        onRequestClose={() => setSelectedOpportunity(null)}
+      >
+        <View style={styles.modalCenteredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>{selectedOpportunity?.title}</Text>
+            <Text style={styles.modalCompany}>{selectedOpportunity?.company}</Text>
+
+            <ScrollView style={styles.modalContentScrollView}>
+              <Text style={styles.modalDescription}>
+                {selectedOpportunity?.description}
+              </Text>
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => setSelectedOpportunity(null)}
+            >
+              <Text style={styles.modalButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -281,5 +321,55 @@ const styles = StyleSheet.create({
   },
   mediumPriorityText: {
     color: '#d97706',
+  },
+  modalCenteredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalView: {
+    width: '90%',
+    maxHeight: '80%',
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 25,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalCompany: {
+    fontSize: 16,
+    color: '#64748b',
+    marginBottom: 15,
+  },
+  modalContentScrollView: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  modalDescription: {
+    fontSize: 14,
+    textAlign: 'left',
+    lineHeight: 22,
+  },
+  modalButton: {
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    backgroundColor: COLORS.buttonPrimaryBackground,
+  },
+  modalButtonText: {
+    color: COLORS.buttonPrimaryText,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

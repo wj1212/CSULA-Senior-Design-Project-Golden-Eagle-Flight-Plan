@@ -7,12 +7,14 @@ import { SPACING } from '../constants/spacing';
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
-  onPress?: () => void;
+  onApplyPress?: () => void;
+  onLearnMorePress?: () => void;
 }
 
 export const OpportunityCard: React.FC<OpportunityCardProps> = ({ 
   opportunity, 
-  onPress 
+  onApplyPress,
+  onLearnMorePress
 }) => {
   const getIcon = (type: string) => {
     switch (type) {
@@ -41,7 +43,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
   };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.iconContainer}>
           <Ionicons 
@@ -62,13 +64,13 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
       </View>
       <View style={styles.actions}>
         <TouchableOpacity style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>Learn More</Text>
+          <Text style={styles.secondaryButtonText}onPress={onLearnMorePress}>Learn More</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>Apply</Text>
+          <Text style={styles.primaryButtonText}onPress={onApplyPress}>Apply</Text>
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 };
 
