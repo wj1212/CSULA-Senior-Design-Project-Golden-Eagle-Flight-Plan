@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
   TouchableOpacity,
   TextInput,
   Linking,
@@ -20,20 +20,27 @@ export const OpportunitiesScreen: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const filters = ['All', 'Internships', 'Research', 'Leadership'];
-   const filteredOpportunities = useMemo(() => {
-    if (activeFilter === 'All') { return mockOpportunities; }
+
+  const filteredOpportunities = useMemo(() => {
+    if (activeFilter === 'All') {
+      return mockOpportunities;
+    }
     return mockOpportunities.filter((opp) => opp.type === activeFilter);
   }, [activeFilter]);
 
   const handleCardPress = async (url: string) => {
     const supported = await Linking.canOpenURL(url);
-    if (supported) { await Linking.openURL(url); }
-    else { console.log(`Invalid URL provided: ${url}`); }
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      console.log(`Invalid URL provided: ${url}`);
+    }
   };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Opportunities</Text>
-      
+
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBox}>
@@ -47,9 +54,9 @@ export const OpportunitiesScreen: React.FC = () => {
       </View>
 
       {/* Filter Tabs */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
         style={styles.filterContainer}
       >
         {filters.map((filter) => (
@@ -57,14 +64,16 @@ export const OpportunitiesScreen: React.FC = () => {
             key={filter}
             style={[
               styles.filterTab,
-              activeFilter === filter && styles.filterTabActive
+              activeFilter === filter && styles.filterTabActive,
             ]}
             onPress={() => setActiveFilter(filter)}
           >
-            <Text style={[
-              styles.filterTabText,
-              activeFilter === filter && styles.filterTabTextActive
-            ]}>
+            <Text
+              style={[
+                styles.filterTabText,
+                activeFilter === filter && styles.filterTabTextActive,
+              ]}
+            >
               {filter}
             </Text>
           </TouchableOpacity>
@@ -74,18 +83,20 @@ export const OpportunitiesScreen: React.FC = () => {
       {/* Opportunities List */}
       <ScrollView style={styles.opportunitiesList}>
         {filteredOpportunities.map((opportunity) => (
-          <OpportunityCard 
-            key={opportunity.id} 
+          <OpportunityCard
+            key={opportunity.id}
             opportunity={opportunity}
             onApplyPress={() => handleCardPress(opportunity.link)}
             onLearnMorePress={() => setSelectedOpportunity(opportunity)}
           />
         ))}
       </ScrollView>
+
+      {/* Modal */}
       <Modal
         animationType="slide"
         transparent={true}
-        visible={selectedOpportunity !== null} 
+        visible={selectedOpportunity !== null}
         onRequestClose={() => setSelectedOpportunity(null)}
       >
         <View style={styles.modalCenteredView}>
@@ -100,7 +111,7 @@ export const OpportunitiesScreen: React.FC = () => {
 
             <TouchableOpacity
               style={styles.modalButton}
-              onPress={() => setSelectedOpportunity(null)} 
+              onPress={() => setSelectedOpportunity(null)}
             >
               <Text style={styles.modalButtonText}>Close</Text>
             </TouchableOpacity>
@@ -162,7 +173,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   filterTabActive: {
-    backgroundColor: COLORS.buttonPrimaryBackground, // Gold
+    backgroundColor: COLORS.buttonPrimaryBackground,
   },
   filterTabText: {
     fontSize: 14,
@@ -170,7 +181,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   filterTabTextActive: {
-    color: COLORS.buttonPrimaryText, // Black
+    color: COLORS.buttonPrimaryText,
   },
   opportunitiesList: {
     flex: 1,
@@ -179,7 +190,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalView: {
     width: '90%',
@@ -189,10 +200,7 @@ const styles = StyleSheet.create({
     padding: 25,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -105,6 +105,7 @@ export const HomeScreen: React.FC = () => {
               <StatCard value={mockUser.credits} label="Credits Earned" />
               <StatCard value="73%" label="Degree Progress" />
             </View>
+
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Recommended Opportunities</Text>
               {mockOpportunities.slice(0, 2).map((opportunity) => (
@@ -116,6 +117,7 @@ export const HomeScreen: React.FC = () => {
                   onLearnMorePress={() => setSelectedOpportunity(opportunity)}
                 />
               ))}
+
             </View>
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
@@ -147,8 +149,8 @@ export const HomeScreen: React.FC = () => {
             />
           </View>
         </View>
-      </KeyboardAvoidingView>
-      
+      </KeyboardAvoidingView >
+
       <Modal
         animationType="slide"
         transparent={true}
@@ -175,8 +177,7 @@ export const HomeScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 

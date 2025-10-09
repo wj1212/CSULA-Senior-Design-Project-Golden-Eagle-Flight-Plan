@@ -20,6 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "RegLogin">;
 
+
 /**
  * Extracted reusable login form content
  */
@@ -94,19 +95,21 @@ const RegLoginContent = ({
 );
 
 export default function RegLogin() {
-    const { height } = useWindowDimensions();
-    const navigation = useNavigation<Nav>();
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const { login } = useAuth();
-    const handleLogin = async () => {
-        setError(null);
-        if (!email.trim() || !password) {
-            setError("Please enter both email and password.");
-            return;
-        }
+  const { height } = useWindowDimensions();
+  const navigation = useNavigation<Nav>();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { login } = useAuth();
+
+  const handleLogin = async () => {
+    setError(null);
+    if (!email.trim() || !password) {
+      setError("Please enter both email and password.");
+      return;
+    }
 
         setLoading(true);
         try {
