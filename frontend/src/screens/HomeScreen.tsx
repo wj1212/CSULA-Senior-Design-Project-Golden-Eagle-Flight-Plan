@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -117,19 +117,7 @@ export const HomeScreen: React.FC = () => {
                   onLearnMorePress={() => setSelectedOpportunity(opportunity)}
                 />
               ))}
-            </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Recommended Opportunities</Text>
-              {mockOpportunities.slice(0, 2).map((opportunity) => (
-                <OpportunityCard
-                  key={opportunity.id}
-                  opportunity={opportunity}
-                  // Add these two lines to pass the instructions down to the card
-                  onApplyPress={() => handleCardPress(opportunity.link)}
-                  onLearnMorePress={() => setSelectedOpportunity(opportunity)}
-                />
-              ))}
             </View>
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
