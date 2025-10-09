@@ -44,14 +44,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = getStoredToken();
+        const token = await getStoredToken();
         if (token) {
           const result = await authService.verifyToken();
           if (result.success) {
             setUser(result.user);
           } else {
-            // Token is invalid, clear it
             authService.logout();
+            setUser(null);
           }
         }
       } catch (error) {
@@ -70,12 +70,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Attempting login with:', email);
       const result = await authService.login({ email, password });
       console.log('Login result:', result);
-      
+
       if (result.success && result.user) {
         setUser(result.user);
         return { success: true };
       } else {
-        return { success: false, error: result.error };
+        return { success: false, error: result.error || 'Login failed' };
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -93,18 +93,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }) => {
     try {
       setLoading(true);
-      console.log('Attempting registration with:', userData.email);
       const result = await authService.register(userData);
-      console.log('Registration result:', result);
-      
       if (result.success && result.user) {
         setUser(result.user);
         return { success: true };
       } else {
-        return { success: false, error: result.error };
+        return { success: false, error: result.error || 'Registration failed' };
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('Register error:', error);
       return { success: false, error: 'Registration failed' };
     } finally {
       setLoading(false);
@@ -120,12 +117,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const result = await authService.updateProfile(profileData);
-      
       if (result.success && result.user) {
         setUser(result.user);
         return { success: true };
       } else {
-        return { success: false, error: result.error };
+        return { success: false, error: result.error || 'Profile update failed' };
       }
     } catch (error) {
       return { success: false, error: 'Profile update failed' };
@@ -140,22 +136,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (result.success && result.user) {
         setUser(result.user);
       }
-    } catch (error) {
-      console.error('Profile refresh error:', error);
+    } catch (err) {
+      console.error('Refresh profile failed', err);
     }
   };
 
-  const value: AuthContextType = {
-    user,
-    loading,
-    login,
-    register,
-    logout,
-    updateProfile,
-    refreshProfile,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        logout,
+        updateProfile,
+        refreshProfile,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = (): AuthContextType => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -20,9 +20,11 @@ import { CircleButton } from '../components/CircleButton';
 import { COLORS } from '../constants/colors';
 import { SPACING } from '../constants/spacing';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { useAuth } from '../contexts/AuthContext';
+import { Opportunity } from '../types';
 export const HomeScreen: React.FC = () => {
   const { width } = useWindowDimensions();
+  const { user, loading } = useAuth();
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
 
   const handleCardPress = async (url: string) => {
@@ -36,11 +38,24 @@ export const HomeScreen: React.FC = () => {
   const handleAcademicPress = () => console.log('Academic Press');
   const handleCareerPress = () => console.log('Career Press');
   const handleLeadershipPress = () => console.log('Leadership Press');
+
+  // Circle button sizing
   const sidePadding = SPACING.xl * 2;
   const spacingBetweenCircles = SPACING.lg * 2;
   const dynamicSize = (width - sidePadding - spacingBetweenCircles) / 3;
   const maxSize = 300;
   const circleSize = Math.min(dynamicSize, maxSize);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.title}>Loading...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // Use logged in user if available, else mock
+  const displayUser = user ?? mockUser;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -52,7 +67,7 @@ export const HomeScreen: React.FC = () => {
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
           <View style={styles.contentContainer}>
             <Text style={styles.title}>
-              Welcome back, {mockUser.name.split(' ')[0]}!
+              Welcome back, {displayUser?.name?.split(' ')[0] ?? 'Student'}!
             </Text>
 
             <View style={styles.circleNavContainer}>
@@ -83,8 +98,8 @@ export const HomeScreen: React.FC = () => {
                   </View>
                 </View>
               ))}
-
             </View>
+
             <View style={styles.statsContainer}>
               <StatCard value={mockUser.gpa} label="Current GPA" />
               <StatCard value={mockUser.credits} label="Credits Earned" />
@@ -105,26 +120,34 @@ export const HomeScreen: React.FC = () => {
             </View>
 
             <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Recommended Opportunities</Text>
+              {mockOpportunities.slice(0, 2).map((opportunity) => (
+                <OpportunityCard
+                  key={opportunity.id}
+                  opportunity={opportunity}
+                  // Add these two lines to pass the instructions down to the card
+                  onApplyPress={() => handleCardPress(opportunity.link)}
+                  onLearnMorePress={() => setSelectedOpportunity(opportunity)}
+                />
+              ))}
+            </View>
+            <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
               <View style={styles.quickActions}>
                 <TouchableOpacity style={styles.quickAction}>
-
                   <Ionicons name="book-outline" size={24} color={COLORS.primary} />
                   <Text style={styles.quickActionText}>Add Courses</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.quickAction}>
-
                   <Ionicons name="target-outline" size={24} color={COLORS.primary} />
                   <Text style={styles.quickActionText}>Find Opportunities</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.quickAction}>
-
                   <Ionicons name="school-outline" size={24} color={COLORS.primary} />
                   <Text style={styles.quickActionText}>View Plan</Text>
                 </TouchableOpacity>
               </View>
             </View>
-
           </View>
         </ScrollView>
 
@@ -231,7 +254,6 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     textAlign: 'center',
   },
-
   searchBarContainer: {
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.md,
@@ -269,10 +291,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
@@ -316,7 +335,6 @@ const styles = StyleSheet.create({
   mediumPriorityText: {
     color: '#d97706',
   },
-
   modalCenteredView: {
     flex: 1,
     justifyContent: 'center',

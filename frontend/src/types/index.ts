@@ -16,6 +16,7 @@ export interface Opportunity {
   deadline: string;
   match: number;
   description: string;
+  link: string;
 }
 
 export interface Course {

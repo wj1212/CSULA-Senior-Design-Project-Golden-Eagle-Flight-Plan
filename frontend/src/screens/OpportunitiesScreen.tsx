@@ -21,6 +21,10 @@ export const OpportunitiesScreen: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const filters = ['All', 'Internships', 'Research', 'Leadership'];
+   const filteredOpportunities = useMemo(() => {
+    if (activeFilter === 'All') { return mockOpportunities; }
+    return mockOpportunities.filter((opp) => opp.type === activeFilter);
+  }, [activeFilter]);
 
   const filteredOpportunities = useMemo(() => {
     if (activeFilter === 'All') { return mockOpportunities; }
@@ -85,7 +89,6 @@ export const OpportunitiesScreen: React.FC = () => {
           />
         ))}
       </ScrollView>
-
       <Modal
         animationType="slide"
         transparent={true}
