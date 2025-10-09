@@ -92,7 +92,11 @@ export const OpportunitiesScreen: React.FC = () => {
           <View style={styles.modalView}>
             <Text style={styles.modalTitle}>{selectedOpportunity?.title}</Text>
             <Text style={styles.modalCompany}>{selectedOpportunity?.company}</Text>
-            <Text style={styles.modalDescription}>{selectedOpportunity?.description}</Text>
+            <ScrollView style={styles.modalScrollView}>
+              <Text style={styles.modalDescription}>
+                {selectedOpportunity?.description}
+              </Text>
+            </ScrollView>
 
             <TouchableOpacity
               style={styles.modalButton}
@@ -178,10 +182,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)', 
   },
   modalView: {
-    margin: 20,
+    width: '90%',
+    maxHeight: '80%',
     backgroundColor: 'white',
     borderRadius: 20,
-    padding: 35,
+    padding: 25,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
@@ -191,6 +196,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  modalScrollView: {
+    width: '100%',
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
@@ -206,12 +215,12 @@ const styles = StyleSheet.create({
   modalDescription: {
     fontSize: 14,
     textAlign: 'left',
-    marginBottom: 20,
+    lineHeight: 22,
   },
   modalButton: {
     borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
     backgroundColor: COLORS.buttonPrimaryBackground,
   },
   modalButtonText: {

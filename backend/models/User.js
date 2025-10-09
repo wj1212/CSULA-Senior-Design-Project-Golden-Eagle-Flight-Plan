@@ -10,6 +10,7 @@ const UserSchema = new mongoose.Schema(
     gradeLevel: { type: String, default: "Freshman" },
     major: { type: String, default: "" },
     degreeType: { type: String, default: "Bachelor" },
+    gpa: { type: Number, min: 0, max: 4, default: 0 },
     completedCourses: { type: [String], default: [] },
     currentCourses: { type: [String], default: [] },
     careerInterests: { type: [String], default: [] },

@@ -63,11 +63,11 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
         </View>
       </View>
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}onPress={onLearnMorePress}>Learn More</Text>
+        <TouchableOpacity style={styles.secondaryButton} onPress={onLearnMorePress}>
+          <Text style={styles.secondaryButtonText}>Learn More</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}onPress={onApplyPress}>Apply</Text>
+        <TouchableOpacity style={styles.primaryButton} onPress={onApplyPress}>
+          <Text style={styles.primaryButtonText}>Apply</Text>
         </TouchableOpacity>
       </View>
     </View>
