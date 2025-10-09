@@ -127,7 +127,7 @@ export const HomeScreen: React.FC = () => {
                   <Text style={styles.quickActionText}>Add Courses</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.quickAction}>
-                  <Ionicons name="target-outline" size={24} color={COLORS.primary} />
+                  <Ionicons name="at-outline" size={24} color={COLORS.primary} />
                   <Text style={styles.quickActionText}>Find Opportunities</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.quickAction}>
