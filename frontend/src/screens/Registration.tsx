@@ -8,7 +8,7 @@ import {
   Alert,
   Platform,
   ImageBackground,
-  useWindowDimensions,
+  useWindowDimensions
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
 import { COLORS } from "../constants/colors";
@@ -33,6 +33,7 @@ export default function Registration() {
 
   const { register } = useAuth();
 
+  // --- START: Original Logic (Untouched) ---
   const handleRegister = async () => {
     if (!name.trim()) {
       Alert.alert("Error", "Please enter your name");

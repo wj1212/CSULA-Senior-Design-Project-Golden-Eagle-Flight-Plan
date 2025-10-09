@@ -11,8 +11,8 @@ interface OpportunityCardProps {
   onLearnMorePress?: () => void;
 }
 
-export const OpportunityCard: React.FC<OpportunityCardProps> = ({ 
-  opportunity, 
+export const OpportunityCard: React.FC<OpportunityCardProps> = ({
+  opportunity,
   onApplyPress,
   onLearnMorePress
 }) => {
@@ -46,10 +46,10 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.iconContainer}>
-          <Ionicons 
-            name={getIcon(opportunity.type) as any} 
-            size={24} 
-            color={getTypeColor(opportunity.type)} 
+          <Ionicons
+            name={getIcon(opportunity.type) as any}
+            size={24}
+            color={getTypeColor(opportunity.type)}
           />
         </View>
         <View style={styles.info}>
@@ -62,12 +62,13 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           <Text style={styles.matchLabel}>match</Text>
         </View>
       </View>
+
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}onPress={onLearnMorePress}>Learn More</Text>
+        <TouchableOpacity style={styles.secondaryButton} onPress={onLearnMorePress}>
+          <Text style={styles.secondaryButtonText}>Learn More</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}onPress={onApplyPress}>Apply</Text>
+        <TouchableOpacity style={styles.primaryButton} onPress={onApplyPress}>
+          <Text style={styles.primaryButtonText}>Apply</Text>
         </TouchableOpacity>
       </View>
     </View>
