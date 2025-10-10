@@ -8,11 +8,10 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import Checkbox from "expo-checkbox";
 import { Dropdown } from "react-native-element-dropdown";
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from "../contexts/AuthContext";
 import { RootStackParamList } from "../../App";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { COLORS } from "../constants/colors";
@@ -20,8 +19,52 @@ import { SPACING } from "../constants/spacing";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Profile">;
 
-// Mock data
-const COURSES = ["Math 101", "CS 201", "History 110", "Psych 150"];
+// Full list of courses
+const COURSES = [
+  "CS 1222 - Introduction to Relational Databases [3]",
+  "CS 2011 - Introduction to Programming I [4]",
+  "CS 2012 - Introduction to Programming II [4]",
+  "CS 2013 - Programming with Data Structures [4]",
+  "CS 2148 - Discrete Structures [4]",
+  "CS 2445 - Introduction to Computer Systems [3]",
+  "CS 2470 - Fundamentals of Network Systems and Cybersecurity [3]",
+  "ENGL 2030 - Introduction to Technical Writing [3]",
+  "MATH 2110 - Calculus I [4]",
+  "MATH 2120 - Calculus II [4]",
+  "MATH 2740 - Introduction to Data Science and Statistics [3]",
+  "PHYS 2100 - General Physics I: Mechanics [4]",
+  "CS 3035 - Programming Paradigms [3]",
+  "CS 3112 - Analysis of Algorithms [3]",
+  "CS 3186 - Introduction to Automata Theory [3]",
+  "CS 3220 - Web and Internet Programming [4]",
+  "CS 3337 - Software Engineering [3]",
+  "CS 3338 - Software Engineering Tools [1]",
+  "CS 3801 - Societal and Ethical Issues in Computing [3]",
+  "CS 4440 - Introduction to Operating Systems [3]",
+  "CS 4961 - Software Design Laboratory I [3]",
+  "CS 4962 - Software Design Laboratory II [3]",
+  "CS 4963 - Computer Science Recapitulation [3]",
+  "CS 4075 - Concurrent and Distributed Programming [3]",
+  "CS 4188 - Compilers [3]",
+  "CS 4220 - Current Trends in Web Design and Development [3]",
+  "CS 4222 - Principles of Data Base Systems [3]",
+  "CS 4470 - Computer Networking Protocols [3]",
+  "CS 4471 - Computer Networks Configuration and Management [3]",
+  "CS 4472 - Computer and Cyber Security [3]",
+  "CS 4540 - Topics in Advanced Computer Science [1-3]",
+  "CS 4550 - Computer Graphics [3]",
+  "CS 4551 - Multimedia Software Systems [3]",
+  "CS 4555 - Introduction to 3D Computer Game Programming [3]",
+  "CS 4635 - Modeling and Simulation [3]",
+  "CS 4660 - Artificial Intelligence [3]",
+  "CS 4661 - Introduction to Data Science [3]",
+  "CS 4662 - Advanced Machine Learning and Deep Learning [3]",
+  "CS 4665 - Introduction to Data Visualization [3]",
+  "CS 4780 - Cryptography and Information Security [3]",
+  "CS 4875 - Human Centered Computing [3]",
+  "EE 3445 - Computer Organization [3]",
+];
+
 const CAREER_AREAS = ["Engineering", "Business", "Healthcare", "Arts"];
 const GRADE_LEVELS = ["Freshman", "Sophomore", "Junior", "Senior"];
 const MAJORS = [
@@ -32,34 +75,23 @@ const MAJORS = [
   "Biology",
 ];
 const DEGREE_TYPES = ["Bachelor", "Master", "PhD"];
-
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const TIME_SLOTS = [
-  "8–10am",
-  "10–12pm",
-  "12–2pm",
-  "2–4pm",
-  "4–6pm",
-  "6–8pm",
-];
+const TIME_SLOTS = ["8–10am","10–12pm","12–2pm","2–4pm","4–6pm","6–8pm"];
 
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
   const { user, updateProfile, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
-  
+
   const [gradeLevel, setGradeLevel] = useState(user?.gradeLevel || "Freshman");
   const [major, setMajor] = useState(user?.major || "");
   const [degreeType, setDegreeType] = useState(user?.degreeType || "Bachelor");
-
   const [completedCourses, setCompletedCourses] = useState<string[]>(user?.completedCourses || []);
   const [careerInterests, setCareerInterests] = useState<string[]>(user?.careerInterests || []);
   const [disabilities, setDisabilities] = useState<string[]>(user?.disabilities || []);
-  const [availability, setAvailability] = useState<
-    { day: string; slot: string }[]
-  >(user?.availability || []);
+  const [availability, setAvailability] = useState<{ day: string; slot: string }[]>(user?.availability || []);
 
-  // Load user data when component mounts or user changes
+  // Sync with user data on mount
   useEffect(() => {
     if (user) {
       setGradeLevel(user.gradeLevel || "Freshman");
@@ -72,62 +104,32 @@ export default function ProfileScreen() {
     }
   }, [user]);
 
-  const toggleCourse = (course: string) => {
-    setCompletedCourses((prev) =>
-      prev.includes(course)
-        ? prev.filter((c) => c !== course)
-        : [...prev, course]
-    );
-  };
-
-  const toggleCareer = (area: string) => {
-    setCareerInterests((prev) =>
-      prev.includes(area)
-        ? prev.filter((c) => c !== area)
-        : [...prev, area]
-    );
-  };
-
-  const toggleDisability = (item: string) => {
-    setDisabilities((prev) =>
-      prev.includes(item)
-        ? prev.filter((d) => d !== item)
-        : [...prev, item]
-    );
+  // Toggle handlers
+  const toggleItem = (list: string[], setList: (arr: string[]) => void, item: string) => {
+    setList(list.includes(item) ? list.filter((i) => i !== item) : [...list, item]);
   };
 
   const toggleAvailability = (day: string, slot: string) => {
-    const key = { day, slot };
-    setAvailability((prev) =>
-      prev.some((a) => a.day === day && a.slot === slot)
-        ? prev.filter((a) => !(a.day === day && a.slot === slot))
-        : [...prev, key]
-    );
+    const exists = availability.some((a) => a.day === day && a.slot === slot);
+    setAvailability(exists ? availability.filter((a) => !(a.day === day && a.slot === slot)) : [...availability, { day, slot }]);
   };
 
+  // Save handler
   const handleSave = async () => {
     setLoading(true);
-    
     try {
-      const profileData = {
-        gradeLevel,
-        major,
-        degreeType,
-        completedCourses,
-        careerInterests,
-        disabilities,
-        availability,
-      };
-
+      const profileData = { gradeLevel, major, degreeType, completedCourses, careerInterests, disabilities, availability };
       const result = await updateProfile(profileData);
-      
+
       if (result.success) {
         Alert.alert("Success", "Profile saved successfully!");
+        await refreshProfile();
         navigation.replace("Main");
       } else {
         Alert.alert("Error", result.error || "Failed to save profile");
       }
-    } catch (error) {
+    } catch (err) {
+      console.error("Save profile error:", err);
       Alert.alert("Error", "An unexpected error occurred");
     } finally {
       setLoading(false);
@@ -135,7 +137,6 @@ export default function ProfileScreen() {
   };
 
   const handleDiscard = () => {
-    // Reset to user's saved data
     if (user) {
       setGradeLevel(user.gradeLevel || "Freshman");
       setMajor(user.major || "");
@@ -144,14 +145,6 @@ export default function ProfileScreen() {
       setCareerInterests(user.careerInterests || []);
       setDisabilities(user.disabilities || []);
       setAvailability(user.availability || []);
-    } else {
-      setGradeLevel("Freshman");
-      setMajor("");
-      setDegreeType("Bachelor");
-      setCompletedCourses([]);
-      setCareerInterests([]);
-      setDisabilities([]);
-      setAvailability([]);
     }
   };
 
@@ -205,11 +198,9 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 key={course}
                 style={[styles.chip, selected && styles.chipSelected]}
-                onPress={() => toggleCourse(course)}
+                onPress={() => toggleItem(completedCourses, setCompletedCourses, course)}
               >
-                <Text
-                  style={[styles.chipText, selected && styles.chipTextSelected]}
-                >
+                <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
                   {course}
                 </Text>
               </TouchableOpacity>
@@ -226,13 +217,9 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 key={area}
                 style={[styles.chip, selected && styles.chipSelected]}
-                onPress={() => toggleCareer(area)}
+                onPress={() => toggleItem(careerInterests, setCareerInterests, area)}
               >
-                <Text
-                  style={[styles.chipText, selected && styles.chipTextSelected]}
-                >
-                  {area}
-                </Text>
+                <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{area}</Text>
               </TouchableOpacity>
             );
           })}
@@ -245,11 +232,7 @@ export default function ProfileScreen() {
             const checked = disabilities.includes(item);
             return (
               <View key={item} style={styles.checkboxContainer}>
-                <Checkbox
-                  value={checked}
-                  onValueChange={() => toggleDisability(item)}
-                  color={checked ? COLORS.primary : undefined}
-                />
+                <Checkbox value={checked} onValueChange={() => toggleItem(disabilities, setDisabilities, item)} color={checked ? COLORS.primary : undefined} />
                 <Text style={styles.checkboxLabel}>{item}</Text>
               </View>
             );
@@ -260,35 +243,25 @@ export default function ProfileScreen() {
         <Text style={styles.label}>Weekly Availability</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View>
-            {/* Header row */}
             <View style={styles.scheduleRow}>
               <View style={[styles.scheduleCell, styles.scheduleHeader]} />
               {DAYS.map((day) => (
-                <View
-                  key={day}
-                  style={[styles.scheduleCell, styles.scheduleHeader]}
-                >
+                <View key={day} style={[styles.scheduleCell, styles.scheduleHeader]}>
                   <Text style={styles.scheduleHeaderText}>{day}</Text>
                 </View>
               ))}
             </View>
-            {/* Time slot rows */}
             {TIME_SLOTS.map((slot) => (
               <View key={slot} style={styles.scheduleRow}>
                 <View style={[styles.scheduleCell, styles.scheduleHeader]}>
                   <Text style={styles.scheduleHeaderText}>{slot}</Text>
                 </View>
                 {DAYS.map((day) => {
-                  const active = availability.some(
-                    (a) => a.day === day && a.slot === slot
-                  );
+                  const active = availability.some((a) => a.day === day && a.slot === slot);
                   return (
                     <TouchableOpacity
                       key={day + slot}
-                      style={[
-                        styles.scheduleCell,
-                        active && styles.scheduleActive,
-                      ]}
+                      style={[styles.scheduleCell, active && styles.scheduleActive]}
                       onPress={() => toggleAvailability(day, slot)}
                     />
                   );
@@ -322,92 +295,31 @@ export default function ProfileScreen() {
   );
 }
 
+// ...keep your existing styles here (no changes needed)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   scrollContainer: { padding: SPACING.lg },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: COLORS.text,
-    marginBottom: SPACING.xl,
-  },
-  label: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.sm,
-    color: COLORS.text,
-  },
-  dropdown: {
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderRadius: 10,
-    paddingHorizontal: SPACING.sm,
-    marginBottom: SPACING.md,
-    backgroundColor: "#fff",
-    height: 50,
-    justifyContent: "center",
-  },
-  chipContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: SPACING.md,
-  },
-  chip: {
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderRadius: 20,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    margin: SPACING.xs,
-    backgroundColor: "#fff",
-  },
-  chipSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
+  title: { fontSize: 28, fontWeight: "bold", color: COLORS.text, marginBottom: SPACING.xl },
+  label: { fontSize: 18, fontWeight: "600", marginTop: SPACING.lg, marginBottom: SPACING.sm, color: COLORS.text },
+  dropdown: { borderWidth: 1, borderColor: COLORS.primary, borderRadius: 10, paddingHorizontal: SPACING.sm, marginBottom: SPACING.md, backgroundColor: "#fff", height: 50, justifyContent: "center" },
+  chipContainer: { flexDirection: "row", flexWrap: "wrap", marginBottom: SPACING.md },
+  chip: { borderWidth: 1, borderColor: COLORS.primary, borderRadius: 20, paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, margin: SPACING.xs, backgroundColor: "#fff" },
+  chipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   chipText: { fontSize: 14, color: COLORS.text },
   chipTextSelected: { color: "#000", fontWeight: "600" },
   checkboxRow: { flexDirection: "column", marginBottom: SPACING.md },
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: SPACING.sm,
-  },
-  checkboxLabel: {
-    marginLeft: SPACING.sm,
-    fontSize: 14,
-    color: COLORS.text,
-  },
+  checkboxContainer: { flexDirection: "row", alignItems: "center", marginBottom: SPACING.sm },
+  checkboxLabel: { marginLeft: SPACING.sm, fontSize: 14, color: COLORS.text },
   scheduleRow: { flexDirection: "row" },
-  scheduleCell: {
-    width: 70,
-    height: 40,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  scheduleCell: { width: 70, height: 40, borderWidth: 1, borderColor: "#ddd", justifyContent: "center", alignItems: "center" },
   scheduleHeader: { backgroundColor: "#f5f5f5" },
   scheduleHeaderText: { fontSize: 12, fontWeight: "600" },
   scheduleActive: { backgroundColor: COLORS.primary },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: SPACING.xl,
-  },
-  button: {
-    flex: 1,
-    padding: SPACING.md,
-    borderRadius: 10,
-    alignItems: "center",
-    marginHorizontal: SPACING.sm,
-  },
+  buttonRow: { flexDirection: "row", justifyContent: "space-between", marginTop: SPACING.xl },
+  button: { flex: 1, padding: SPACING.md, borderRadius: 10, alignItems: "center", marginHorizontal: SPACING.sm },
   save: { backgroundColor: COLORS.primary },
   discard: { backgroundColor: "#ddd" },
   buttonText: { fontSize: 16, fontWeight: "600", color: COLORS.text },
   saveText: { color: "#000" },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
+  buttonDisabled: { opacity: 0.6 },
 });
