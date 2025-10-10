@@ -8,10 +8,10 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
 import Checkbox from "expo-checkbox";
 import { Dropdown } from "react-native-element-dropdown";
-import { useAuth } from "../contexts/AuthContext";
+import { useNavigation } from "@react-navigation/native";
+import { useAuth } from '../contexts/AuthContext';
 import { RootStackParamList } from "../../App";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { COLORS } from "../constants/colors";
@@ -19,53 +19,68 @@ import { SPACING } from "../constants/spacing";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Profile">;
 
-// Full list of courses
-const COURSES = [
-  "CS 1222 - Introduction to Relational Databases [3]",
-  "CS 2011 - Introduction to Programming I [4]",
-  "CS 2012 - Introduction to Programming II [4]",
-  "CS 2013 - Programming with Data Structures [4]",
-  "CS 2148 - Discrete Structures [4]",
-  "CS 2445 - Introduction to Computer Systems [3]",
-  "CS 2470 - Fundamentals of Network Systems and Cybersecurity [3]",
-  "ENGL 2030 - Introduction to Technical Writing [3]",
-  "MATH 2110 - Calculus I [4]",
-  "MATH 2120 - Calculus II [4]",
-  "MATH 2740 - Introduction to Data Science and Statistics [3]",
-  "PHYS 2100 - General Physics I: Mechanics [4]",
-  "CS 3035 - Programming Paradigms [3]",
-  "CS 3112 - Analysis of Algorithms [3]",
-  "CS 3186 - Introduction to Automata Theory [3]",
-  "CS 3220 - Web and Internet Programming [4]",
-  "CS 3337 - Software Engineering [3]",
-  "CS 3338 - Software Engineering Tools [1]",
-  "CS 3801 - Societal and Ethical Issues in Computing [3]",
-  "CS 4440 - Introduction to Operating Systems [3]",
-  "CS 4961 - Software Design Laboratory I [3]",
-  "CS 4962 - Software Design Laboratory II [3]",
-  "CS 4963 - Computer Science Recapitulation [3]",
-  "CS 4075 - Concurrent and Distributed Programming [3]",
-  "CS 4188 - Compilers [3]",
-  "CS 4220 - Current Trends in Web Design and Development [3]",
-  "CS 4222 - Principles of Data Base Systems [3]",
-  "CS 4470 - Computer Networking Protocols [3]",
-  "CS 4471 - Computer Networks Configuration and Management [3]",
-  "CS 4472 - Computer and Cyber Security [3]",
-  "CS 4540 - Topics in Advanced Computer Science [1-3]",
-  "CS 4550 - Computer Graphics [3]",
-  "CS 4551 - Multimedia Software Systems [3]",
-  "CS 4555 - Introduction to 3D Computer Game Programming [3]",
-  "CS 4635 - Modeling and Simulation [3]",
-  "CS 4660 - Artificial Intelligence [3]",
-  "CS 4661 - Introduction to Data Science [3]",
-  "CS 4662 - Advanced Machine Learning and Deep Learning [3]",
-  "CS 4665 - Introduction to Data Visualization [3]",
-  "CS 4780 - Cryptography and Information Security [3]",
-  "CS 4875 - Human Centered Computing [3]",
-  "EE 3445 - Computer Organization [3]",
+// Course categories for UI
+const COURSE_CATEGORIES = [
+  {
+    title: "Lower Division Core Courses (43 units)",
+    courses: [
+      "CS 1222 - Introduction to Relational Databases [3]",
+      "CS 2011 - Introduction to Programming I [4]",
+      "CS 2012 - Introduction to Programming II [4]",
+      "CS 2013 - Programming with Data Structures [4]",
+      "CS 2148 - Discrete Structures [4]",
+      "CS 2445 - Introduction to Computer Systems [3]",
+      "CS 2470 - Fundamentals of Network Systems and Cybersecurity [3]",
+      "ENGL 2030 - Introduction to Technical Writing [3]",
+      "MATH 2110 - Calculus I [4]",
+      "MATH 2120 - Calculus II [4]",
+      "MATH 2740 - Introduction to Data Science and Statistics [3]",
+      "PHYS 2100 - General Physics I: Mechanics [4]",
+    ],
+  },
+  {
+    title: "Upper Division Core Courses (32 units)",
+    courses: [
+      "CS 3035 - Programming Paradigms [3]",
+      "CS 3112 - Analysis of Algorithms [3]",
+      "CS 3186 - Introduction to Automata Theory [3]",
+      "CS 3220 - Web and Internet Programming [4]",
+      "CS 3337 - Software Engineering [3]",
+      "CS 3338 - Software Engineering Tools [1]",
+      "CS 3801 - Societal and Ethical Issues in Computing [3]",
+      "CS 4440 - Introduction to Operating Systems [3]",
+      "CS 4961 - Software Design Laboratory I [3]",
+      "CS 4962 - Software Design Laboratory II [3]",
+      "CS 4963 - Computer Science Recapitulation [3]",
+    ],
+  },
+  {
+    title: "Electives (18 units)",
+    courses: [
+      "CS 4075 - Concurrent and Distributed Programming [3]",
+      "CS 4188 - Compilers [3]",
+      "CS 4220 - Current Trends in Web Design and Development [3]",
+      "CS 4222 - Principles of Data Base Systems [3]",
+      "CS 4470 - Computer Networking Protocols [3]",
+      "CS 4471 - Computer Networks Configuration and Management [3]",
+      "CS 4472 - Computer and Cyber Security [3]",
+      "CS 4540 - Topics in Advanced Computer Science [1-3]",
+      "CS 4550 - Computer Graphics [3]",
+      "CS 4551 - Multimedia Software Systems [3]",
+      "CS 4555 - Introduction to 3D Computer Game Programming [3]",
+      "CS 4635 - Modeling and Simulation [3]",
+      "CS 4660 - Artificial Intelligence [3]",
+      "CS 4661 - Introduction to Data Science [3]",
+      "CS 4662 - Advanced Machine Learning and Deep Learning [3]",
+      "CS 4665 - Introduction to Data Visualization [3]",
+      "CS 4780 - Cryptography and Information Security [3]",
+      "CS 4875 - Human Centered Computing [3]",
+      "EE 3445 - Computer Organization [3]",
+    ],
+  },
 ];
 
-const CAREER_AREAS = ["Engineering", "Business", "Healthcare", "Arts"];
+// Other dropdown data
 const GRADE_LEVELS = ["Freshman", "Sophomore", "Junior", "Senior"];
 const MAJORS = [
   "Computer Science",
@@ -91,7 +106,6 @@ export default function ProfileScreen() {
   const [disabilities, setDisabilities] = useState<string[]>(user?.disabilities || []);
   const [availability, setAvailability] = useState<{ day: string; slot: string }[]>(user?.availability || []);
 
-  // Sync with user data on mount
   useEffect(() => {
     if (user) {
       setGradeLevel(user.gradeLevel || "Freshman");
@@ -104,32 +118,45 @@ export default function ProfileScreen() {
     }
   }, [user]);
 
-  // Toggle handlers
-  const toggleItem = (list: string[], setList: (arr: string[]) => void, item: string) => {
-    setList(list.includes(item) ? list.filter((i) => i !== item) : [...list, item]);
+  const toggleCourse = (course: string) => {
+    setCompletedCourses((prev) =>
+      prev.includes(course) ? prev.filter(c => c !== course) : [...prev, course]
+    );
+  };
+
+  const toggleCareer = (area: string) => {
+    setCareerInterests(prev =>
+      prev.includes(area) ? prev.filter(c => c !== area) : [...prev, area]
+    );
+  };
+
+  const toggleDisability = (item: string) => {
+    setDisabilities(prev =>
+      prev.includes(item) ? prev.filter(d => d !== item) : [...prev, item]
+    );
   };
 
   const toggleAvailability = (day: string, slot: string) => {
-    const exists = availability.some((a) => a.day === day && a.slot === slot);
-    setAvailability(exists ? availability.filter((a) => !(a.day === day && a.slot === slot)) : [...availability, { day, slot }]);
+    const key = { day, slot };
+    setAvailability(prev =>
+      prev.some(a => a.day === day && a.slot === slot)
+        ? prev.filter(a => !(a.day === day && a.slot === slot))
+        : [...prev, key]
+    );
   };
 
-  // Save handler
   const handleSave = async () => {
     setLoading(true);
     try {
       const profileData = { gradeLevel, major, degreeType, completedCourses, careerInterests, disabilities, availability };
       const result = await updateProfile(profileData);
-
       if (result.success) {
         Alert.alert("Success", "Profile saved successfully!");
-        await refreshProfile();
         navigation.replace("Main");
       } else {
         Alert.alert("Error", result.error || "Failed to save profile");
       }
-    } catch (err) {
-      console.error("Save profile error:", err);
+    } catch {
       Alert.alert("Error", "An unexpected error occurred");
     } finally {
       setLoading(false);
@@ -145,6 +172,14 @@ export default function ProfileScreen() {
       setCareerInterests(user.careerInterests || []);
       setDisabilities(user.disabilities || []);
       setAvailability(user.availability || []);
+    } else {
+      setGradeLevel("Freshman");
+      setMajor("");
+      setDegreeType("Bachelor");
+      setCompletedCourses([]);
+      setCareerInterests([]);
+      setDisabilities([]);
+      setAvailability([]);
     }
   };
 
@@ -157,11 +192,11 @@ export default function ProfileScreen() {
         <Text style={styles.label}>Grade Level</Text>
         <Dropdown
           style={styles.dropdown}
-          data={GRADE_LEVELS.map((g) => ({ label: g, value: g }))}
+          data={GRADE_LEVELS.map(g => ({ label: g, value: g }))}
           labelField="label"
           valueField="value"
           value={gradeLevel}
-          onChange={(item) => setGradeLevel(item.value)}
+          onChange={item => setGradeLevel(item.value)}
           placeholder="Select grade level"
         />
 
@@ -169,11 +204,11 @@ export default function ProfileScreen() {
         <Text style={styles.label}>Major</Text>
         <Dropdown
           style={styles.dropdown}
-          data={MAJORS.map((m) => ({ label: m, value: m }))}
+          data={MAJORS.map(m => ({ label: m, value: m }))}
           labelField="label"
           valueField="value"
           value={major}
-          onChange={(item) => setMajor(item.value)}
+          onChange={item => setMajor(item.value)}
           placeholder="Select major"
         />
 
@@ -181,43 +216,46 @@ export default function ProfileScreen() {
         <Text style={styles.label}>Degree Type</Text>
         <Dropdown
           style={styles.dropdown}
-          data={DEGREE_TYPES.map((d) => ({ label: d, value: d }))}
+          data={DEGREE_TYPES.map(d => ({ label: d, value: d }))}
           labelField="label"
           valueField="value"
           value={degreeType}
-          onChange={(item) => setDegreeType(item.value)}
+          onChange={item => setDegreeType(item.value)}
           placeholder="Select degree"
         />
 
-        {/* Completed Courses */}
+        {/* Completed Courses with categories */}
         <Text style={styles.label}>Completed Courses</Text>
-        <View style={styles.chipContainer}>
-          {COURSES.map((course) => {
-            const selected = completedCourses.includes(course);
-            return (
-              <TouchableOpacity
-                key={course}
-                style={[styles.chip, selected && styles.chipSelected]}
-                onPress={() => toggleItem(completedCourses, setCompletedCourses, course)}
-              >
-                <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                  {course}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {COURSE_CATEGORIES.map(category => (
+          <View key={category.title} style={{ marginBottom: SPACING.md }}>
+            <Text style={[styles.label, { fontSize: 16, fontWeight: "700" }]}>{category.title}</Text>
+            <View style={styles.chipContainer}>
+              {category.courses.map(course => {
+                const selected = completedCourses.includes(course);
+                return (
+                  <TouchableOpacity
+                    key={course}
+                    style={[styles.chip, selected && styles.chipSelected]}
+                    onPress={() => toggleCourse(course)}
+                  >
+                    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{course}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        ))}
 
         {/* Career Interests */}
         <Text style={styles.label}>Career Interests</Text>
         <View style={styles.chipContainer}>
-          {CAREER_AREAS.map((area) => {
+          {["Engineering","Business","Healthcare","Arts"].map(area => {
             const selected = careerInterests.includes(area);
             return (
               <TouchableOpacity
                 key={area}
                 style={[styles.chip, selected && styles.chipSelected]}
-                onPress={() => toggleItem(careerInterests, setCareerInterests, area)}
+                onPress={() => toggleCareer(area)}
               >
                 <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{area}</Text>
               </TouchableOpacity>
@@ -228,11 +266,11 @@ export default function ProfileScreen() {
         {/* Accessibility Needs */}
         <Text style={styles.label}>Accessibility Needs</Text>
         <View style={styles.checkboxRow}>
-          {["Wheelchair Access", "Sign Language Interpreter"].map((item) => {
+          {["Wheelchair Access","Sign Language Interpreter"].map(item => {
             const checked = disabilities.includes(item);
             return (
               <View key={item} style={styles.checkboxContainer}>
-                <Checkbox value={checked} onValueChange={() => toggleItem(disabilities, setDisabilities, item)} color={checked ? COLORS.primary : undefined} />
+                <Checkbox value={checked} onValueChange={() => toggleDisability(item)} color={checked ? COLORS.primary : undefined} />
                 <Text style={styles.checkboxLabel}>{item}</Text>
               </View>
             );
@@ -245,19 +283,19 @@ export default function ProfileScreen() {
           <View>
             <View style={styles.scheduleRow}>
               <View style={[styles.scheduleCell, styles.scheduleHeader]} />
-              {DAYS.map((day) => (
+              {DAYS.map(day => (
                 <View key={day} style={[styles.scheduleCell, styles.scheduleHeader]}>
                   <Text style={styles.scheduleHeaderText}>{day}</Text>
                 </View>
               ))}
             </View>
-            {TIME_SLOTS.map((slot) => (
+            {TIME_SLOTS.map(slot => (
               <View key={slot} style={styles.scheduleRow}>
                 <View style={[styles.scheduleCell, styles.scheduleHeader]}>
                   <Text style={styles.scheduleHeaderText}>{slot}</Text>
                 </View>
-                {DAYS.map((day) => {
-                  const active = availability.some((a) => a.day === day && a.slot === slot);
+                {DAYS.map(day => {
+                  const active = availability.some(a => a.day === day && a.slot === slot);
                   return (
                     <TouchableOpacity
                       key={day + slot}
@@ -271,23 +309,13 @@ export default function ProfileScreen() {
           </View>
         </ScrollView>
 
-        {/* Save / Discard Buttons */}
+        {/* Buttons */}
         <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.button, styles.discard]}
-            onPress={handleDiscard}
-            disabled={loading}
-          >
+          <TouchableOpacity style={[styles.button, styles.discard]} onPress={handleDiscard} disabled={loading}>
             <Text style={styles.buttonText}>Discard</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.save, loading && styles.buttonDisabled]}
-            onPress={handleSave}
-            disabled={loading}
-          >
-            <Text style={[styles.buttonText, styles.saveText]}>
-              {loading ? "Saving..." : "Save"}
-            </Text>
+          <TouchableOpacity style={[styles.button, styles.save, loading && styles.buttonDisabled]} onPress={handleSave} disabled={loading}>
+            <Text style={[styles.buttonText, styles.saveText]}>{loading ? "Saving..." : "Save"}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -295,7 +323,6 @@ export default function ProfileScreen() {
   );
 }
 
-// ...keep your existing styles here (no changes needed)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   scrollContainer: { padding: SPACING.lg },
