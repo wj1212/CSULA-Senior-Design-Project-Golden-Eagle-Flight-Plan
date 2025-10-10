@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { HomeScreen } from '../screens/HomeScreen';
 import { OpportunitiesScreen } from '../screens/OpportunitiesScreen';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
+import { CoursesScreen } from '../screens/CoursesScreen';
 import { NavigationScreens } from '../types';
 import { Image, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { CommonActions } from '@react-navigation/native';
@@ -110,7 +111,7 @@ export const BottomTabNavigator: React.FC = () => {
       <Tab.Screen name="Opportunities" component={OpportunitiesScreen} />
       <Tab.Screen
         name="Courses"
-        children={() => <PlaceholderScreen title="Course Planning" />}
+        component={CoursesScreen}
       />
       <Tab.Screen
         name="Plan"

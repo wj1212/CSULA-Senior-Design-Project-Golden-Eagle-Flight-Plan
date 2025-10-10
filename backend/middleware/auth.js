@@ -19,7 +19,11 @@ export const authenticateToken = async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    req.user = user;
+    // Set user with id for easy access
+    req.user = {
+      id: user._id.toString(),
+      ...user.toObject()
+    };
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);

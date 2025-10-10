@@ -20,11 +20,47 @@ export interface Opportunity {
 }
 
 export interface Course {
-  id: string;
-  code: string;
-  name: string;
-  credits: number;
-  priority: 'High' | 'Medium' | 'Low';
+  _id: string;
+  courseCode: string;
+  courseName: string;
+  units: number;
+  prerequisites: string[];
+  semester: number;
+  category: 'Lower Division Core' | 'Upper Division Core' | 'Elective' | 'Math' | 'Physics' | 'English' | 'GE';
+  isElective: boolean;
+  description: string;
+  isRequired: boolean;
+}
+
+export interface RecommendedCourse extends Course {
+  prerequisitesMet: boolean;
+  reason: string;
+}
+
+export interface CourseRecommendations {
+  currentSemester: number;
+  currentSemesterCourses: RecommendedCourse[];
+  nextSemesterCourses: RecommendedCourse[];
+  futureCourses: RecommendedCourse[];
+  unavailableCourses: RecommendedCourse[];
+  totalAvailable: number;
+  totalUnavailable: number;
+}
+
+export interface CourseProgress {
+  totalCourses: number;
+  completedCount: number;
+  remainingCount: number;
+  completionPercentage: number;
+  totalUnits: number;
+  completedUnits: number;
+  remainingUnits: number;
+  categoryStats: {
+    [category: string]: {
+      total: number;
+      completed: number;
+    };
+  };
 }
 
 export interface NavigationScreens {
