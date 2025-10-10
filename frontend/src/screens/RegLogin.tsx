@@ -20,7 +20,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "RegLogin">;
 
-
 /**
  * Extracted reusable login form content
  */
@@ -44,83 +43,137 @@ const RegLoginContent = ({
     loading: boolean;
     error: string | null;
     styles: ReturnType<typeof StyleSheet.create>;
-}) => (
-    <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
-        <View style={styles.screen}>
-            <View style={styles.card}>
-                <Text style={styles.title}>Login</Text>
-                <Text style={styles.subtitle}>Enter your account details below.</Text>
+}) => {
+    // Local field-specific errors
+    const [emailError, setEmailError] = useState<string | null>(null);
+    const [passwordError, setPasswordError] = useState<string | null>(null);
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Your Email"
-                    placeholderTextColor="#888"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    value={email}
-                    onChangeText={setEmail}
-                />
+    // Inline validation on change
+    const handleEmailChange = (text: string) => {
+        setEmail(text);
+        if (!text.trim()) setEmailError("Email is required");
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text))
+            setEmailError("Enter a valid email address");
+        else setEmailError(null);
+    };
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    placeholderTextColor="#888"
-                    secureTextEntry
-                    value={password}
-                    onChangeText={setPassword}
-                />
+    const handlePasswordChange = (text: string) => {
+        setPassword(text);
+        if (!text) setPasswordError("Password is required");
+        else if (text.length < 6)
+            setPasswordError("Password must be at least 6 characters");
+        else setPasswordError(null);
+    };
 
-                {error && <Text style={styles.errorText}>{error}</Text>}
+    return (
+        <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
+            <View style={styles.screen}>
+                <View style={styles.card}>
+                    <Text style={styles.title}>Login</Text>
+                    <Text style={styles.subtitle}>Enter your account details below.</Text>
 
-                <TouchableOpacity
-                    style={[styles.button, loading && styles.buttonDisabled]}
-                    onPress={handleLogin}
-                    disabled={loading}
-                >
-                    <Text style={styles.buttonText}>
-                        {loading ? "Signing In..." : "Login"}
-                    </Text>
-                </TouchableOpacity>
+                    <TextInput
+                        style={[
+                            styles.input,
+                            emailError && { borderColor: "red" }
+                        ]}
+                        placeholder="Your Email"
+                        placeholderTextColor="#888"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        value={email}
+                        onChangeText={handleEmailChange}
+                    />
+                    {emailError && <Text style={styles.errorText}>{emailError}</Text>}
 
-                <TouchableOpacity
-                    style={styles.button}
-                    onPress={handleBack}
-                >
-                    <Text style={styles.buttonText}>Back</Text>
-                </TouchableOpacity>
+                    <TextInput
+                        style={[
+                            styles.input,
+                            passwordError && { borderColor: "red" }
+                        ]}
+                        placeholder="Password"
+                        placeholderTextColor="#888"
+                        secureTextEntry
+                        value={password}
+                        onChangeText={handlePasswordChange}
+                    />
+                    {passwordError && <Text style={styles.errorText}>{passwordError}</Text>}
+
+                    {error && !emailError && !passwordError && (
+                        <Text style={styles.errorText}>{error}</Text>
+                    )}
+
+                    <TouchableOpacity
+                        style={[styles.button, loading && styles.buttonDisabled]}
+                        onPress={handleLogin}
+                        disabled={loading || emailError !== null || passwordError !== null}
+                    >
+                        <Text style={styles.buttonText}>
+                            {loading ? "Signing In..." : "Login"}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.button}
+                        onPress={handleBack}
+                    >
+                        <Text style={styles.buttonText}>Back</Text>
+                    </TouchableOpacity>
+                </View>
+                <Footer />
             </View>
-            <Footer />
-        </View>
-    </SafeAreaView>
-);
+        </SafeAreaView>
+    );
+};
 
 export default function RegLogin() {
-  const { height } = useWindowDimensions();
-  const navigation = useNavigation<Nav>();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+    const { height } = useWindowDimensions();
+    const navigation = useNavigation<Nav>();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-  const { login } = useAuth();
+    const { login } = useAuth();
 
-  const handleLogin = async () => {
-    setError(null);
-    if (!email.trim() || !password) {
-      setError("Please enter both email and password.");
-      return;
-    }
+    const handleLogin = async () => {
+        setError(null);
+
+        // Frontend validation before submission
+        if (!email.trim() || !password) {
+            setError("Please enter both email and password.");
+            return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            setError("Enter a valid email address.");
+            return;
+        }
+        if (password.length < 6) {
+            setError("Password must be at least 6 characters.");
+            return;
+        }
 
         setLoading(true);
         try {
             const result = await login(email.trim().toLowerCase(), password);
+
             if (result.success) {
                 navigation.replace("Main");
             } else {
-                setError(result.error || "Login failed. Please check your credentials.");
+                // If server returns 400 or similar, show a friendly message
+                if (result.error?.includes("400")) {
+                    setError("Invalid credentials. Please check your email and password.");
+                } else {
+                    setError(result.error || "Login failed. Please try again.");
+                }
             }
-        } catch {
-            setError("An unexpected error occurred. Please try again.");
+        } catch (err: any) {
+            // Catch axios/fetch errors
+            if (err.response?.status === 400) {
+                setError("Invalid credentials. Please check your email and password.");
+            } else {
+                setError("An unexpected error occurred. Please try again.");
+            }
         } finally {
             setLoading(false);
         }
@@ -138,17 +191,9 @@ export default function RegLogin() {
     };
 
     const styles = useMemo(() => StyleSheet.create({
-        safeArea: {
-            flex: 1,
-        },
-        backgroundImage: {
-            flex: 1,
-            width: '100%',
-            height: '100%',
-        },
-        backgroundImageInner: {
-            resizeMode: 'cover',
-        },
+        safeArea: { flex: 1 },
+        backgroundImage: { flex: 1, width: '100%', height: '100%' },
+        backgroundImageInner: { resizeMode: 'cover' },
         screen: {
             flex: 1,
             alignItems: 'center',
@@ -170,29 +215,12 @@ export default function RegLogin() {
                     shadowOffset: { width: 0, height: 8 },
                     shadowRadius: 20,
                 },
-                android: {
-                    elevation: 8
-                },
-                web: {
-                    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.1)',
-                    borderWidth: 1,
-                    borderColor: '#EFEFEF',
-                }
+                android: { elevation: 8 },
+                web: { boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.1)', borderWidth: 1, borderColor: '#EFEFEF' },
             }),
         },
-        title: {
-            fontSize: 32,
-            fontWeight: '700',
-            color: COLORS.text,
-            textAlign: 'center',
-            marginBottom: 8,
-        },
-        subtitle: {
-            fontSize: 15,
-            color: '#5b6670',
-            textAlign: 'center',
-            marginBottom: 28,
-        },
+        title: { fontSize: 32, fontWeight: '700', color: COLORS.text, textAlign: 'center', marginBottom: 8 },
+        subtitle: { fontSize: 15, color: '#5b6670', textAlign: 'center', marginBottom: 28 },
         input: {
             width: "100%",
             height: 50,
@@ -214,54 +242,18 @@ export default function RegLogin() {
             justifyContent: 'center',
             backgroundColor: COLORS.buttonPrimaryBackground,
             ...Platform.select({
-                ios: {
-                    shadowColor: COLORS.black,
-                    shadowOpacity: 0.1,
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowRadius: 8,
-                },
-                android: {
-                    elevation: 3
-                }
+                ios: { shadowColor: COLORS.black, shadowOpacity: 0.1, shadowOffset: { width: 0, height: 4 }, shadowRadius: 8 },
+                android: { elevation: 3 },
             }),
         },
-        buttonText: {
-            fontSize: 17,
-            fontWeight: '600',
-            color: COLORS.buttonPrimaryText,
-        },
-        buttonDisabled: {
-            opacity: 0.6,
-        },
-        errorText: {
-            color: "red",
-            textAlign: "center",
-            marginBottom: SPACING.md,
-        },
-        webContainer: {
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: '#000',
-        },
-        blurredBackground: {
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-        },
+        buttonText: { fontSize: 17, fontWeight: '600', color: COLORS.buttonPrimaryText },
+        buttonDisabled: { opacity: 0.6 },
+        errorText: { color: "red", textAlign: "center", marginBottom: SPACING.md },
+        webContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
+        blurredBackground: { position: 'absolute', width: '100%', height: '100%' },
     }), [height]);
 
-    const contentProps = {
-        email,
-        setEmail,
-        password,
-        setPassword,
-        handleLogin,
-        handleBack,
-        loading,
-        error,
-        styles,
-    };
+    const contentProps = { email, setEmail, password, setPassword, handleLogin, handleBack, loading, error, styles };
 
     if (Platform.OS === 'web') {
         return (
