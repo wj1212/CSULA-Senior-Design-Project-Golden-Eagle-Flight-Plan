@@ -6,12 +6,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Checkbox from "expo-checkbox";
 import { Dropdown } from "react-native-element-dropdown";
 import { useNavigation } from "@react-navigation/native";
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from "../contexts/AuthContext";
 import { RootStackParamList } from "../../App";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { COLORS } from "../constants/colors";
@@ -19,164 +20,166 @@ import { SPACING } from "../constants/spacing";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Profile">;
 
-// Course categories for UI - Updated to match official CS roadmap with GE requirements
-const COURSE_CATEGORIES = [
-  {
-    title: "Lower Division Core Courses (43 units)",
-    courses: [
-      "CS 1010",
-      "CS 1222", 
-      "CS 2011",
-      "CS 2012",
-      "CS 2013",
-      "CS 2148",
-      "CS 2445",
-      "CS 2470",
-      "ENGL 2030",
-      "MATH 2110",
-      "MATH 2120",
-      "MATH 2740",
-      "PHYS 2100",
-    ],
-  },
-  {
-    title: "Upper Division Core Courses (32 units)",
-    courses: [
-      "CS 3035",
-      "CS 3112",
-      "CS 3186",
-      "CS 3220",
-      "CS 3337",
-      "CS 3338",
-      "CS 3801",
-      "CS 4440",
-      "CS 4961",
-      "CS 4962",
-      "CS 4963",
-    ],
-  },
-  {
-    title: "Required GE Courses (22 units)",
-    courses: [
-      "GE 1A",
-      "GE 1C",
-      "US HIST",
-      "GE 3A",
-      "GE 3A (d)",
-      "GE 4 Gov't",
-      "GE 4 (d)",
-      "GE 6",
-    ],
-  },
-  {
-    title: "CS Electives (choose 6 for 18 units)",
-    courses: [
-      "CS Elective 1",
-      "CS Elective 2",
-      "CS Elective 3",
-      "CS Elective 4",
-      "CS Elective 5",
-      "CS Elective 6",
-      "CS 4075",
-      "CS 4188",
-      "CS 4220",
-      "CS 4222",
-      "CS 4470",
-      "CS 4471",
-      "CS 4472",
-      "CS 4540",
-      "CS 4550",
-      "CS 4551",
-      "CS 4555",
-      "CS 4635",
-      "CS 4660",
-      "CS 4661",
-      "CS 4662",
-      "CS 4665",
-      "CS 4780",
-      "CS 4875",
-      "EE 3445",
-    ],
-  },
-];
-
-// Other dropdown data
-const GRADE_LEVELS = ["Freshman", "Sophomore", "Junior", "Senior"];
 const MAJORS = [
   "Computer Science",
+  "Information Systems",
+  "Engineering",
   "Business Administration",
   "Psychology",
-  "Engineering",
   "Biology",
+  "Nursing",
+  "Education",
+  "Sociology",
 ];
-const DEGREE_TYPES = ["Bachelor", "Master", "PhD"];
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const TIME_SLOTS = ["8–10am","10–12pm","12–2pm","2–4pm","4–6pm","6–8pm"];
+
+const FINANCIAL_STATUSES = [
+  "Scholarship Recipient",
+  "Financial Aid (FAFSA)",
+  "Work-Study",
+  "Out-of-Pocket",
+  "Other",
+];
+
+const GRADE_LEVELS = [
+  "Freshman",
+  "Sophomore",
+  "Junior",
+  "Senior",
+  "Graduate",
+];
+
+const COMMUTE_STATUSES = [
+  "On-Campus Housing",
+  "Off-Campus (Near Campus)",
+  "Commuter (Local)",
+  "Remote/Online",
+];
+
+const CAREER_INTEREST_MAP: Record<string, string[]> = {
+  "Computer Science": [
+    "Software Engineering",
+    "AI / Machine Learning",
+    "Cybersecurity",
+    "Game Development",
+    "Data Science",
+    "Research",
+  ],
+  "Information Systems": [
+    "IT Support",
+    "Database Administration",
+    "Systems Analysis",
+    "Project Management",
+    "Business Analytics",
+  ],
+  "Business Administration": [
+    "Finance",
+    "Marketing",
+    "Entrepreneurship",
+    "Human Resources",
+    "Operations Management",
+  ],
+  "Engineering": [
+    "Mechanical Design",
+    "Electrical Systems",
+    "Civil Infrastructure",
+    "Robotics",
+    "Product Development",
+  ],
+  Psychology: [
+    "Clinical Practice",
+    "Counseling",
+    "Human Resources",
+    "Neuroscience",
+    "Education",
+  ],
+  Biology: [
+    "Biotechnology",
+    "Healthcare",
+    "Research",
+    "Pharmaceuticals",
+    "Environmental Science",
+  ],
+  default: [
+    "Research",
+    "Teaching",
+    "Consulting",
+    "Management",
+    "Public Service",
+  ],
+};
+
+const OSD_OPTIONS = [
+  "None",
+  "Physical Accessibility Needs",
+  "Extended Exam Time",
+  "Note-Taking Assistance",
+  "Adaptive Technology",
+  "Mental Health Support",
+];
 
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
-  const { user, updateProfile, refreshProfile } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  const [gradeLevel, setGradeLevel] = useState(user?.gradeLevel || "Freshman");
+  // profile data
   const [major, setMajor] = useState(user?.major || "");
-  const [degreeType, setDegreeType] = useState(user?.degreeType || "Bachelor");
-  const [completedCourses, setCompletedCourses] = useState<string[]>(user?.completedCourses || []);
-  const [careerInterests, setCareerInterests] = useState<string[]>(user?.careerInterests || []);
-  const [disabilities, setDisabilities] = useState<string[]>(user?.disabilities || []);
-  const [availability, setAvailability] = useState<{ day: string; slot: string }[]>(user?.availability || []);
+  const [gpa, setGpa] = useState(user?.gpa?.toString() || "");
+  const [financialStatus, setFinancialStatus] = useState(
+    user?.financialStatus || ""
+  );
+  const [gradeLevel, setGradeLevel] = useState(user?.gradeLevel || "Freshman");
+  const [commuteStatus, setCommuteStatus] = useState(
+    user?.commuteStatus || "Commuter (Local)"
+  );
+  const [careerInterests, setCareerInterests] = useState<string[]>(
+    user?.careerInterests || []
+  );
+  const [osd, setOsd] = useState<string[]>(user?.osd || []);
+  const [credits, setCredits] = useState(
+    user?.credits ? user.credits.toString() : ""
+  );
 
   useEffect(() => {
     if (user) {
-      setGradeLevel(user.gradeLevel || "Freshman");
       setMajor(user.major || "");
-      setDegreeType(user.degreeType || "Bachelor");
-      setCompletedCourses(user.completedCourses || []);
+      setGpa(user.gpa?.toString() || "");
+      setFinancialStatus(user.financialStatus || "");
+      setGradeLevel(user.gradeLevel || "Freshman");
+      setCommuteStatus(user.commuteStatus || "Commuter (Local)");
       setCareerInterests(user.careerInterests || []);
-      setDisabilities(user.disabilities || []);
-      setAvailability(user.availability || []);
+      setOsd(user.osd || []);
+      setCredits(user.credits ? user.credits.toString() : "");
     }
   }, [user]);
 
-  const toggleCourse = (course: string) => {
-    setCompletedCourses((prev) =>
-      prev.includes(course) ? prev.filter(c => c !== course) : [...prev, course]
-    );
-  };
-
-  const toggleCareer = (area: string) => {
-    setCareerInterests(prev =>
-      prev.includes(area) ? prev.filter(c => c !== area) : [...prev, area]
-    );
-  };
-
-  const toggleDisability = (item: string) => {
-    setDisabilities(prev =>
-      prev.includes(item) ? prev.filter(d => d !== item) : [...prev, item]
-    );
-  };
-
-  const toggleAvailability = (day: string, slot: string) => {
-    const key = { day, slot };
-    setAvailability(prev =>
-      prev.some(a => a.day === day && a.slot === slot)
-        ? prev.filter(a => !(a.day === day && a.slot === slot))
-        : [...prev, key]
+  const toggleMulti = (setter: any, state: string[], value: string) => {
+    setter(
+      state.includes(value) ? state.filter((v) => v !== value) : [...state, value]
     );
   };
 
   const handleSave = async () => {
     setLoading(true);
     try {
-      const profileData = { gradeLevel, major, degreeType, completedCourses, careerInterests, disabilities, availability };
+      const profileData = {
+        major,
+        gpa: parseFloat(gpa),
+        financialStatus,
+        gradeLevel,
+        commuteStatus,
+        careerInterests,
+        osd,
+        credits: parseInt(credits) || 0,
+      };
       const result = await updateProfile(profileData);
       if (result.success) {
-        Alert.alert("Success", "Profile saved successfully!");
+        Alert.alert("Success", "Profile updated successfully!");
         navigation.replace("Main");
       } else {
         Alert.alert("Error", result.error || "Failed to save profile");
       }
-    } catch {
+    } catch (err) {
       Alert.alert("Error", "An unexpected error occurred");
     } finally {
       setLoading(false);
@@ -185,157 +188,151 @@ export default function ProfileScreen() {
 
   const handleDiscard = () => {
     if (user) {
-      setGradeLevel(user.gradeLevel || "Freshman");
       setMajor(user.major || "");
-      setDegreeType(user.degreeType || "Bachelor");
-      setCompletedCourses(user.completedCourses || []);
+      setGpa(user.gpa?.toString() || "");
+      setFinancialStatus(user.financialStatus || "");
+      setGradeLevel(user.gradeLevel || "Freshman");
+      setCommuteStatus(user.commuteStatus || "Commuter (Local)");
       setCareerInterests(user.careerInterests || []);
-      setDisabilities(user.disabilities || []);
-      setAvailability(user.availability || []);
-    } else {
-      setGradeLevel("Freshman");
-      setMajor("");
-      setDegreeType("Bachelor");
-      setCompletedCourses([]);
-      setCareerInterests([]);
-      setDisabilities([]);
-      setAvailability([]);
+      setOsd(user.osd || []);
+      setCredits(user.credits ? user.credits.toString() : "");
     }
   };
+
+  const availableCareerInterests =
+    CAREER_INTEREST_MAP[major] || CAREER_INTEREST_MAP.default;
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Text style={styles.title}>Profile</Text>
 
-        {/* Grade Level */}
-        <Text style={styles.label}>Grade Level</Text>
-        <Dropdown
-          style={styles.dropdown}
-          data={GRADE_LEVELS.map(g => ({ label: g, value: g }))}
-          labelField="label"
-          valueField="value"
-          value={gradeLevel}
-          onChange={item => setGradeLevel(item.value)}
-          placeholder="Select grade level"
-        />
-
         {/* Major */}
         <Text style={styles.label}>Major</Text>
         <Dropdown
           style={styles.dropdown}
-          data={MAJORS.map(m => ({ label: m, value: m }))}
+          data={MAJORS.map((m) => ({ label: m, value: m }))}
           labelField="label"
           valueField="value"
           value={major}
-          onChange={item => setMajor(item.value)}
+          onChange={(item) => setMajor(item.value)}
           placeholder="Select major"
         />
 
-        {/* Degree Type */}
-        <Text style={styles.label}>Degree Type</Text>
-        <Dropdown
-          style={styles.dropdown}
-          data={DEGREE_TYPES.map(d => ({ label: d, value: d }))}
-          labelField="label"
-          valueField="value"
-          value={degreeType}
-          onChange={item => setDegreeType(item.value)}
-          placeholder="Select degree"
+        {/* GPA */}
+        <Text style={styles.label}>GPA</Text>
+        <TextInput
+          style={styles.input}
+          keyboardType="decimal-pad"
+          value={gpa}
+          onChangeText={setGpa}
+          placeholder="Enter GPA (e.g. 3.75)"
         />
 
-        {/* Completed Courses with categories */}
-        <Text style={styles.label}>Completed Courses</Text>
-        {COURSE_CATEGORIES.map(category => (
-          <View key={category.title} style={{ marginBottom: SPACING.md }}>
-            <Text style={[styles.label, { fontSize: 16, fontWeight: "700" }]}>{category.title}</Text>
-            <View style={styles.chipContainer}>
-              {category.courses.map(course => {
-                const selected = completedCourses.includes(course);
-                return (
-                  <TouchableOpacity
-                    key={course}
-                    style={[styles.chip, selected && styles.chipSelected]}
-                    onPress={() => toggleCourse(course)}
-                  >
-                    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{course}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        ))}
+        {/* Grade Level */}
+        <Text style={styles.label}>Academic Level</Text>
+        <Dropdown
+          style={styles.dropdown}
+          data={GRADE_LEVELS.map((a) => ({ label: a, value: a }))}
+          labelField="label"
+          valueField="value"
+          value={gradeLevel}
+          onChange={(item) => setGradeLevel(item.value)}
+          placeholder="Select grade level"
+        />
+
+        {/* Financial Status */}
+        <Text style={styles.label}>Financial Status</Text>
+        <Dropdown
+          style={styles.dropdown}
+          data={FINANCIAL_STATUSES.map((f) => ({ label: f, value: f }))}
+          labelField="label"
+          valueField="value"
+          value={financialStatus}
+          onChange={(item) => setFinancialStatus(item.value)}
+          placeholder="Select financial status"
+        />
+
+        {/* Commute Status */}
+        <Text style={styles.label}>Commute Status</Text>
+        <Dropdown
+          style={styles.dropdown}
+          data={COMMUTE_STATUSES.map((c) => ({ label: c, value: c }))}
+          labelField="label"
+          valueField="value"
+          value={commuteStatus}
+          onChange={(item) => setCommuteStatus(item.value)}
+          placeholder="Select commute status"
+        />
 
         {/* Career Interests */}
         <Text style={styles.label}>Career Interests</Text>
         <View style={styles.chipContainer}>
-          {["Engineering","Business","Healthcare","Arts"].map(area => {
+          {availableCareerInterests.map((area) => {
             const selected = careerInterests.includes(area);
             return (
               <TouchableOpacity
                 key={area}
                 style={[styles.chip, selected && styles.chipSelected]}
-                onPress={() => toggleCareer(area)}
+                onPress={() =>
+                  toggleMulti(setCareerInterests, careerInterests, area)
+                }
               >
-                <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{area}</Text>
+                <Text
+                  style={[styles.chipText, selected && styles.chipTextSelected]}
+                >
+                  {area}
+                </Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* Accessibility Needs */}
-        <Text style={styles.label}>Accessibility Needs</Text>
+        {/* OSD */}
+        <Text style={styles.label}>Accessibility / OSD</Text>
         <View style={styles.checkboxRow}>
-          {["Wheelchair Access","Sign Language Interpreter"].map(item => {
-            const checked = disabilities.includes(item);
+          {OSD_OPTIONS.map((item) => {
+            const checked = osd.includes(item);
             return (
               <View key={item} style={styles.checkboxContainer}>
-                <Checkbox value={checked} onValueChange={() => toggleDisability(item)} color={checked ? COLORS.primary : undefined} />
+                <Checkbox
+                  value={checked}
+                  onValueChange={() => toggleMulti(setOsd, osd, item)}
+                  color={checked ? COLORS.primary : undefined}
+                />
                 <Text style={styles.checkboxLabel}>{item}</Text>
               </View>
             );
           })}
         </View>
 
-        {/* Weekly Availability */}
-        <Text style={styles.label}>Weekly Availability</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View>
-            <View style={styles.scheduleRow}>
-              <View style={[styles.scheduleCell, styles.scheduleHeader]} />
-              {DAYS.map(day => (
-                <View key={day} style={[styles.scheduleCell, styles.scheduleHeader]}>
-                  <Text style={styles.scheduleHeaderText}>{day}</Text>
-                </View>
-              ))}
-            </View>
-            {TIME_SLOTS.map(slot => (
-              <View key={slot} style={styles.scheduleRow}>
-                <View style={[styles.scheduleCell, styles.scheduleHeader]}>
-                  <Text style={styles.scheduleHeaderText}>{slot}</Text>
-                </View>
-                {DAYS.map(day => {
-                  const active = availability.some(a => a.day === day && a.slot === slot);
-                  return (
-                    <TouchableOpacity
-                      key={day + slot}
-                      style={[styles.scheduleCell, active && styles.scheduleActive]}
-                      onPress={() => toggleAvailability(day, slot)}
-                    />
-                  );
-                })}
-              </View>
-            ))}
-          </View>
-        </ScrollView>
+        {/* Credits */}
+        <Text style={styles.label}>Credits Earned</Text>
+        <TextInput
+          style={styles.input}
+          keyboardType="numeric"
+          value={credits}
+          onChangeText={setCredits}
+          placeholder="Enter total credits"
+        />
 
         {/* Buttons */}
         <View style={styles.buttonRow}>
-          <TouchableOpacity style={[styles.button, styles.discard]} onPress={handleDiscard} disabled={loading}>
+          <TouchableOpacity
+            style={[styles.button, styles.discard]}
+            onPress={handleDiscard}
+            disabled={loading}
+          >
             <Text style={styles.buttonText}>Discard</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.save, loading && styles.buttonDisabled]} onPress={handleSave} disabled={loading}>
-            <Text style={[styles.buttonText, styles.saveText]}>{loading ? "Saving..." : "Save"}</Text>
+          <TouchableOpacity
+            style={[styles.button, styles.save, loading && styles.buttonDisabled]}
+            onPress={handleSave}
+            disabled={loading}
+          >
+            <Text style={[styles.buttonText, styles.saveText]}>
+              {loading ? "Saving..." : "Save"}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -346,24 +343,78 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   scrollContainer: { padding: SPACING.lg },
-  title: { fontSize: 28, fontWeight: "bold", color: COLORS.text, marginBottom: SPACING.xl },
-  label: { fontSize: 18, fontWeight: "600", marginTop: SPACING.lg, marginBottom: SPACING.sm, color: COLORS.text },
-  dropdown: { borderWidth: 1, borderColor: COLORS.primary, borderRadius: 10, paddingHorizontal: SPACING.sm, marginBottom: SPACING.md, backgroundColor: "#fff", height: 50, justifyContent: "center" },
-  chipContainer: { flexDirection: "row", flexWrap: "wrap", marginBottom: SPACING.md },
-  chip: { borderWidth: 1, borderColor: COLORS.primary, borderRadius: 20, paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, margin: SPACING.xs, backgroundColor: "#fff" },
-  chipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: COLORS.text,
+    marginBottom: SPACING.xl,
+  },
+  label: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.sm,
+    color: COLORS.text,
+  },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 10,
+    paddingHorizontal: SPACING.sm,
+    marginBottom: SPACING.md,
+    backgroundColor: "#fff",
+    height: 50,
+    justifyContent: "center",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 10,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    backgroundColor: "#fff",
+    marginBottom: SPACING.md,
+    height: 50,
+  },
+  chipContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: SPACING.md,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 20,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    margin: SPACING.xs,
+    backgroundColor: "#fff",
+  },
+  chipSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
   chipText: { fontSize: 14, color: COLORS.text },
   chipTextSelected: { color: "#000", fontWeight: "600" },
   checkboxRow: { flexDirection: "column", marginBottom: SPACING.md },
-  checkboxContainer: { flexDirection: "row", alignItems: "center", marginBottom: SPACING.sm },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: SPACING.sm,
+  },
   checkboxLabel: { marginLeft: SPACING.sm, fontSize: 14, color: COLORS.text },
-  scheduleRow: { flexDirection: "row" },
-  scheduleCell: { width: 70, height: 40, borderWidth: 1, borderColor: "#ddd", justifyContent: "center", alignItems: "center" },
-  scheduleHeader: { backgroundColor: "#f5f5f5" },
-  scheduleHeaderText: { fontSize: 12, fontWeight: "600" },
-  scheduleActive: { backgroundColor: COLORS.primary },
-  buttonRow: { flexDirection: "row", justifyContent: "space-between", marginTop: SPACING.xl },
-  button: { flex: 1, padding: SPACING.md, borderRadius: 10, alignItems: "center", marginHorizontal: SPACING.sm },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: SPACING.xl,
+  },
+  button: {
+    flex: 1,
+    padding: SPACING.md,
+    borderRadius: 10,
+    alignItems: "center",
+    marginHorizontal: SPACING.sm,
+  },
   save: { backgroundColor: COLORS.primary },
   discard: { backgroundColor: "#ddd" },
   buttonText: { fontSize: 16, fontWeight: "600", color: COLORS.text },
