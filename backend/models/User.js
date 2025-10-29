@@ -5,8 +5,13 @@ const UserSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true, minlength: 6 },
-
-    // Profile info
+    userType: {
+      type: String,
+      enum: ["Student", "Faculty", "Admin"], // you can add more later
+      required: true,
+      default: "Student",
+    },
+    //Student Profile info
     gradeLevel: {
       type: String,
       enum: ["Freshman", "Sophomore", "Junior", "Senior"],
