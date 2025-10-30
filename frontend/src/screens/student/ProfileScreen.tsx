@@ -120,18 +120,19 @@ const OSD_OPTIONS = [
 
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  // profile data
+  // profile data (local form state)
   const [major, setMajor] = useState(user?.major || "");
   const [gpa, setGpa] = useState(user?.gpa?.toString() || "");
   const [financialStatus, setFinancialStatus] = useState(
-    user?.financialStatus || ""
+    // default to an allowed enum value if user value missing
+    user?.financialStatus || FINANCIAL_STATUSES[0]
   );
   const [gradeLevel, setGradeLevel] = useState(user?.gradeLevel || "Freshman");
   const [commuteStatus, setCommuteStatus] = useState(
-    user?.commuteStatus || "Commuter (Local)"
+    user?.commuteStatus || COMMUTE_STATUSES[0]
   );
   const [careerInterests, setCareerInterests] = useState<string[]>(
     user?.careerInterests || []
@@ -141,13 +142,14 @@ export default function ProfileScreen() {
     user?.credits ? user.credits.toString() : ""
   );
 
+  // Keep form in sync with user when user object changes (prefill)
   useEffect(() => {
     if (user) {
       setMajor(user.major || "");
-      setGpa(user.gpa?.toString() || "");
-      setFinancialStatus(user.financialStatus || "");
+      setGpa(user.gpa !== undefined ? user.gpa.toString() : "");
+      setFinancialStatus(user.financialStatus || FINANCIAL_STATUSES[0]);
       setGradeLevel(user.gradeLevel || "Freshman");
-      setCommuteStatus(user.commuteStatus || "Commuter (Local)");
+      setCommuteStatus(user.commuteStatus || COMMUTE_STATUSES[0]);
       setCareerInterests(user.careerInterests || []);
       setOsd(user.osd || []);
       setCredits(user.credits ? user.credits.toString() : "");
@@ -163,28 +165,30 @@ export default function ProfileScreen() {
   const handleSave = async () => {
     setLoading(true);
     try {
+      // Ensure we send enum-safe values
       const profileData = {
         major,
-        // ensure NaN isn't sent
         gpa: gpa ? parseFloat(gpa) : 0,
         financialStatus,
         gradeLevel,
         commuteStatus,
         careerInterests,
         osd,
-        credits: credits ? parseInt(credits, 10) || 0 : 0,
+        credits: credits ? parseInt(credits, 10) : 0,
       };
 
       const result = await updateProfile(profileData);
+
       if (result.success) {
-        // keep user on profile page so they can confirm changes visually
+        // Refresh profile from server (ensures userType and all fields are up-to-date)
+        await refreshProfile();
         Alert.alert("Success", "Profile updated successfully!");
+        // keep user on main app but navigate to Main (safe)
         navigation.replace("Main");
       } else {
         Alert.alert("Error", result.error || "Failed to save profile");
       }
     } catch (err) {
-      console.error("Profile save error:", err);
       Alert.alert("Error", "An unexpected error occurred");
     } finally {
       setLoading(false);
@@ -195,9 +199,9 @@ export default function ProfileScreen() {
     if (user) {
       setMajor(user.major || "");
       setGpa(user.gpa?.toString() || "");
-      setFinancialStatus(user.financialStatus || "");
+      setFinancialStatus(user.financialStatus || FINANCIAL_STATUSES[0]);
       setGradeLevel(user.gradeLevel || "Freshman");
-      setCommuteStatus(user.commuteStatus || "Commuter (Local)");
+      setCommuteStatus(user.commuteStatus || COMMUTE_STATUSES[0]);
       setCareerInterests(user.careerInterests || []);
       setOsd(user.osd || []);
       setCredits(user.credits ? user.credits.toString() : "");

@@ -32,7 +32,7 @@ export default function Registration() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState<"Student" | "Faculty">("Student");
+  const [role, setRole] = useState<"student" | "faculty">("student");
   // Inline error states
   const [nameError, setNameError] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -88,15 +88,14 @@ export default function Registration() {
 
     setLoading(true);
     try {
-      // we cast to `any` to avoid strict TS mismatch if AuthContext.register signature hasn't been extended
+      // pass userType explicitly to backend
       const result = await register({
         name: name.trim(),
         email: email.trim().toLowerCase(),
         password,
         confirmPassword,
-        // ensure the server receives the proper enum value (match mongoose enum: "Student" | "Faculty")
-        userType: role === "Faculty" ? "Faculty" : "Student",
-      } as any);
+        userType: role === "faculty" ? "Faculty" : "Student",
+      });
 
       if (result.success) {
         Alert.alert("Success", "Account created! Please log in.");
@@ -105,8 +104,7 @@ export default function Registration() {
         setEmailError(result.error || "Registration failed");
         Alert.alert("Error", result.error || "Registration failed");
       }
-    } catch (err) {
-      console.error("Registration error:", err);
+    } catch {
       setEmailError("Unexpected error occurred");
       Alert.alert("Error", "Unexpected error occurred");
     } finally {
@@ -246,12 +244,12 @@ export default function Registration() {
             <TouchableOpacity
               style={[
                 styles.roleButton,
-                role === "Student" && styles.roleButtonActive,
+                role === "student" && styles.roleButtonActive,
               ]}
-              onPress={() => setRole("Student")}
+              onPress={() => setRole("student")}
             >
               <Text
-                style={[styles.roleText, role === "Student" && styles.roleTextActive]}
+                style={[styles.roleText, role === "student" && styles.roleTextActive]}
               >
                 Student
               </Text>
@@ -260,12 +258,12 @@ export default function Registration() {
             <TouchableOpacity
               style={[
                 styles.roleButton,
-                role === "Faculty" && styles.roleButtonActive,
+                role === "faculty" && styles.roleButtonActive,
               ]}
-              onPress={() => setRole("Faculty")}
+              onPress={() => setRole("faculty")}
             >
               <Text
-                style={[styles.roleText, role === "Faculty" && styles.roleTextActive]}
+                style={[styles.roleText, role === "faculty" && styles.roleTextActive]}
               >
                 Faculty
               </Text>
