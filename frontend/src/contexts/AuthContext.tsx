@@ -1,18 +1,25 @@
+// src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import authService, { getStoredToken } from '../services/authService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
-  id: string;
-  name: string;
-  email: string;
-  gradeLevel: string;
-  major: string;
-  degreeType: string;
+  id?: string;
+  _id?: string;
+  name?: string;
+  email?: string;
+  userType?: string;
+  gradeLevel?: string;
+  major?: string;
+  degreeType?: string;
+  gpa?: number;
   completedCourses?: string[];
   currentCourses?: string[];
   careerInterests?: string[];
   disabilities?: string[];
   availability?: { day: string; slot: string }[];
+  credits?: number;
+  [key: string]: any;
 }
 
 interface AuthContextType {
@@ -23,9 +30,10 @@ interface AuthContextType {
     name: string;
     email: string;
     password: string;
-    confirmPassword: string;
+    confirmPassword?: string;
+    userType?: string;
   }) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateProfile: (profileData: Partial<User>) => Promise<{ success: boolean; error?: string }>;
   refreshProfile: () => Promise<void>;
 }
@@ -36,44 +44,71 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const USER_STORAGE_KEY = 'app_user_v1';
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check for existing token on app start
+  // Load saved user on startup (token + user)
   useEffect(() => {
-    const checkAuth = async () => {
+    const restore = async () => {
       try {
         const token = await getStoredToken();
-        if (token) {
+        const stored = await AsyncStorage.getItem(USER_STORAGE_KEY);
+        if (stored) {
+          setUser(JSON.parse(stored));
+        } else if (token) {
           const result = await authService.verifyToken();
           if (result.success) {
             setUser(result.user);
+            await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(result.user));
           } else {
-            authService.logout();
+            await authService.logout();
             setUser(null);
           }
         }
-      } catch (error) {
-        console.error('Auth check error:', error);
+      } catch (err) {
+        console.error('Auth restore error:', err);
       } finally {
         setLoading(false);
       }
     };
-
-    checkAuth();
+    restore();
   }, []);
+
+  // persist user whenever it changes
+  useEffect(() => {
+    const persist = async () => {
+      try {
+        if (user) {
+          await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+        } else {
+          await AsyncStorage.removeItem(USER_STORAGE_KEY);
+        }
+      } catch (err) {
+        console.error('Failed to persist user', err);
+      }
+    };
+    persist();
+  }, [user]);
 
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
-      console.log('Attempting login with:', email);
       const result = await authService.login({ email, password });
-      console.log('Login result:', result);
-
-      if (result.success && result.user) {
-        setUser(result.user);
-        return { success: true };
+      if (result.success && result.token) {
+        // token already stored by authService.login
+        // fetch the verified profile so we have userType and all fields immediately
+        const profile = await authService.verifyToken();
+        if (profile.success && profile.user) {
+          setUser(profile.user);
+          return { success: true };
+        } else {
+          // fallback to returned user if profile call failed
+          setUser(result.user || null);
+          return { success: true };
+        }
       } else {
         return { success: false, error: result.error || 'Login failed' };
       }
@@ -89,13 +124,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     name: string;
     email: string;
     password: string;
-    confirmPassword: string;
+    confirmPassword?: string;
+    userType?: string;
   }) => {
     try {
       setLoading(true);
       const result = await authService.register(userData);
       if (result.success && result.user) {
-        setUser(result.user);
+        // intentionally do not setUser (no auto-login), we simply return success.
         return { success: true };
       } else {
         return { success: false, error: result.error || 'Registration failed' };
@@ -108,9 +144,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (err) {
+      console.error('Logout failed', err);
+    } finally {
+      setUser(null);
+    }
   };
 
   const updateProfile = async (profileData: Partial<User>) => {
@@ -124,6 +165,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, error: result.error || 'Profile update failed' };
       }
     } catch (error) {
+      console.error('Update profile error', error);
       return { success: false, error: 'Profile update failed' };
     } finally {
       setLoading(false);

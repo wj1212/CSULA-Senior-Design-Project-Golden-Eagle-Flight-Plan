@@ -1,3 +1,4 @@
+// src/services/authService.ts
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -5,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const isWeb = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 
 // API Base URL (adjust LAN IP for mobile dev)
-const API_BASE_URL = __DEV__ 
+const API_BASE_URL = __DEV__
   ? (isWeb ? 'http://localhost:4000/api' : 'http://192.168.0.147:4000/api') // replace with your PC LAN IP
   : 'https://your-production-backend-url.com/api';
 
@@ -63,7 +64,6 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('Making API request to:', config.url);
     return config;
   },
   (error) => Promise.reject(error)
@@ -71,13 +71,8 @@ api.interceptors.request.use(
 
 // Handle expired token responses
 api.interceptors.response.use(
-  (response) => {
-    console.log('API response received:', response.status, response.data);
-    return response;
-  },
+  (response) => response,
   async (error) => {
-    console.error('API request failed:', error.message);
-    console.error('Error details:', error.response?.data);
     if (error.response?.status === 401) {
       await clearStoredToken();
     }
@@ -86,40 +81,41 @@ api.interceptors.response.use(
 );
 
 // Auth API service
-export const authService = {
-  // Register user
+const authService = {
+  // Register user (do NOT auto-store token here to avoid auto-login)
   register: async (userData: {
     name: string;
     email: string;
     password: string;
-    //confirmPassword: string;
+    confirmPassword?: string;
+    userType?: string;
   }) => {
     try {
-      console.log('Sending registration request to:', API_BASE_URL + '/auth/register');
       const response = await api.post('/auth/register', userData);
       const { token, user } = response.data;
-      if (token) await setStoredToken(token);
+      // IMPORTANT: do not automatically persist token on register to avoid auto-login behaviour.
+      // If you want to auto-login after register, you'll store token here; but we deliberately do NOT.
       return { success: true, user, token };
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.error || error.message || 'Registration failed',
+        error: error.response?.data?.message || error.response?.data?.error || error.message || 'Registration failed',
       };
     }
   },
 
-  // Login user
+  // Login user (store token)
   login: async (credentials: { email: string; password: string }) => {
     try {
-      console.log('Sending login request to:', API_BASE_URL + '/auth/login');
       const response = await api.post('/auth/login', credentials);
       const { token, user } = response.data;
       if (token) await setStoredToken(token);
+      // return user (note: we will verify/fetch profile afterwards in AuthContext to ensure userType present)
       return { success: true, user, token };
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.error || error.message || 'Login failed',
+        error: error.response?.data?.message || error.response?.data?.error || error.message || 'Login failed',
       };
     }
   },
@@ -138,16 +134,7 @@ export const authService = {
   },
 
   // Update user profile
-  updateProfile: async (profileData: {
-    gradeLevel?: string;
-    major?: string;
-    degreeType?: string;
-    completedCourses?: string[];
-    currentCourses?: string[];
-    careerInterests?: string[];
-    disabilities?: string[];
-    availability?: { day: string; slot: string }[];
-  }) => {
+  updateProfile: async (profileData: Record<string, any>) => {
     try {
       const response = await api.put('/auth/profile', profileData);
       return { success: true, user: response.data.user };

@@ -1,24 +1,114 @@
+// src/navigation/BottomTabNavigator.tsx
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { HomeScreen } from '../screens/HomeScreen';
-import { OpportunitiesScreen } from '../screens/OpportunitiesScreen';
-import { PlaceholderScreen } from '../screens/PlaceholderScreen';
-import { CoursesScreen } from '../screens/CoursesScreen';
-import { NavigationScreens } from '../types';
+import { HomeScreen } from '../screens/student/HomeScreen';
+import { OpportunitiesScreen } from '../screens/student/OpportunitiesScreen';
+import { PlaceholderScreen } from '../screens/student/PlaceholderScreen';
+import { CoursesScreen } from '../screens/student/CoursesScreen';
 import { Image, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
-import { CommonActions } from '@react-navigation/native';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import { SPACING } from '../constants/spacing';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '../contexts/AuthContext';  // ✅ import auth context
+import { useAuth } from '../contexts/AuthContext';
+import FacultyDashboard from '../screens/faculty/FacultyDashboard';
+import AdminDashboard from '../screens/admin/AdminDashboard';
 
-const Tab = createBottomTabNavigator<NavigationScreens>();
+type NavParamList = {
+  Home: undefined;
+  Opportunities: undefined;
+  Courses: undefined;
+  Plan: undefined;
+  Community: undefined;
+  Settings: undefined;
+  Profile: undefined;
+  FacultyDashboard: undefined;
+  AdminDashboard: undefined;
+};
+
+const Tab = createBottomTabNavigator<NavParamList>();
 
 export const BottomTabNavigator: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { logout } = useAuth(); // ✅ get logout function
+  const { logout, user } = useAuth();
+  const navigation = useNavigation();
 
+  // Normalize userType if available
+  const userType = (user?.userType || user?.type || '').toString().toLowerCase() || 'student';
+
+  if (userType === 'faculty') {
+    return (
+      <Tab.Navigator
+        screenOptions={{
+          headerTitle: () => (
+            <Image
+              source={require('../../../assets/logo-b.png')}
+              style={{ width: 160, height: 51, resizeMode: 'contain' }}
+            />
+          ),
+          headerTitleAlign: 'center',
+          headerLeft: () => <View style={styles.placeholder} />,
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={async () => {
+                await logout();
+                // safe reset to landing
+                navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                  })
+                );
+              }}
+              style={[styles.headerButtonPrimary, { marginRight: SPACING.md }]}
+            >
+              <Text style={styles.headerButtonPrimaryText}>Logout</Text>
+            </TouchableOpacity>
+          ),
+        }}
+      >
+        <Tab.Screen name="Home" component={FacultyDashboard} options={{ title: 'Faculty' }} />
+      </Tab.Navigator>
+    );
+  }
+
+  if (userType === 'admin') {
+    return (
+      <Tab.Navigator
+        screenOptions={{
+          headerTitle: () => (
+            <Image
+              source={require('../../../assets/logo-b.png')}
+              style={{ width: 160, height: 51, resizeMode: 'contain' }}
+            />
+          ),
+          headerTitleAlign: 'center',
+          headerLeft: () => <View style={styles.placeholder} />,
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={async () => {
+                await logout();
+                navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                  })
+                );
+              }}
+              style={[styles.headerButtonPrimary, { marginRight: SPACING.md }]}
+            >
+              <Text style={styles.headerButtonPrimaryText}>Logout</Text>
+            </TouchableOpacity>
+          ),
+        }}
+      >
+        <Tab.Screen name="Home" component={AdminDashboard} options={{ title: 'Admin' }} />
+      </Tab.Navigator>
+    );
+  }
+
+  // Default: Student UI (full tab set)
   return (
     <Tab.Navigator
       screenOptions={({ navigation, route }) => ({
@@ -84,7 +174,7 @@ export const BottomTabNavigator: React.FC = () => {
         options={({ navigation }) => ({
           headerLeft: () => (
             <TouchableOpacity
-              onPress={() => navigation.navigate("Profile")}
+              onPress={() => navigation.navigate('Profile')}
               style={[styles.headerButtonPrimary, { marginLeft: SPACING.md }]}
             >
               <Text style={styles.headerButtonPrimaryText}>Profile</Text>
@@ -92,8 +182,9 @@ export const BottomTabNavigator: React.FC = () => {
           ),
           headerRight: () => (
             <TouchableOpacity
-              onPress={() => {
-                logout(); // ✅ clear token + reset user
+              onPress={async () => {
+                await logout();
+                // navigate back to login landing safely
                 navigation.dispatch(
                   CommonActions.reset({
                     index: 0,
@@ -109,22 +200,10 @@ export const BottomTabNavigator: React.FC = () => {
         })}
       />
       <Tab.Screen name="Opportunities" component={OpportunitiesScreen} />
-      <Tab.Screen
-        name="Courses"
-        component={CoursesScreen}
-      />
-      <Tab.Screen
-        name="Plan"
-        children={() => <PlaceholderScreen title="My Flight Plan" />}
-      />
-      <Tab.Screen
-        name="Community"
-        children={() => <PlaceholderScreen title="Community" />}
-      />
-      <Tab.Screen
-        name="Settings"
-        children={() => <PlaceholderScreen title="Settings" />}
-      />
+      <Tab.Screen name="Courses" component={CoursesScreen} />
+      <Tab.Screen name="Plan" children={() => <PlaceholderScreen title="My Flight Plan" />} />
+      <Tab.Screen name="Community" children={() => <PlaceholderScreen title="Community" />} />
+      <Tab.Screen name="Settings" children={() => <PlaceholderScreen title="Settings" />} />
     </Tab.Navigator>
   );
 };

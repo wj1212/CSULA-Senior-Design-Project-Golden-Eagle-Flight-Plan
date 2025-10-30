@@ -12,10 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../constants/colors';
-import { SPACING } from '../constants/spacing';
-import { courseService } from '../services/courseService';
-import { CourseRecommendations, RecommendedCourse, CourseProgress } from '../types';
+import { COLORS } from '../../constants/colors';
+import { SPACING } from '../../constants/spacing';
 
 export const CoursesScreen: React.FC = () => {
   const [recommendations, setRecommendations] = useState<CourseRecommendations | null>(null);

@@ -14,7 +14,7 @@ const UserSchema = new mongoose.Schema(
     //Student Profile info
     gradeLevel: {
       type: String,
-      enum: ["Freshman", "Sophomore", "Junior", "Senior"],
+      enum: ["Freshman", "Sophomore", "Junior", "Senior", "Graduate"],
       default: "Freshman",
     },
     major: { type: String, default: "" },
@@ -24,12 +24,12 @@ const UserSchema = new mongoose.Schema(
     // Academic info
     financialStatus: {
       type: String,
-      enum: ["Unspecified", "Full Aid", "Partial Aid", "Self-Funded"],
+      enum: ["Unspecified",",Scholarship Recipient","Financial Aid (FAFSA)","Work-Study","Out-of-Pocket","Other"],
       default: "Unspecified",
     },
     commuteStatus: {
       type: String,
-      enum: ["On-Campus", "Commuter", "Remote"],
+      enum: ["On-Campus","Off-Campus (Near Campus)","Commuter (Local)","Remote/Online"],
       default: "On-Campus",
     },
     credits: { type: Number, min: 0, default: 0 },

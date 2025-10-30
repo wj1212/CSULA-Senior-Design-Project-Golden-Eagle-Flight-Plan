@@ -1,3 +1,4 @@
+// src/screens/auth/Registration.tsx
 import React, { useState, useMemo } from "react";
 import {
   View,
@@ -10,13 +11,13 @@ import {
   useWindowDimensions,
   ImageBackground,
 } from "react-native";
-import { useAuth } from "../contexts/AuthContext";
-import { COLORS } from "../constants/colors";
-import { SPACING } from "../constants/spacing";
+import { useAuth } from "../../contexts/AuthContext";
+import { COLORS } from "../../constants/colors";
+import { SPACING } from "../../constants/spacing";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../App";
-import { Footer } from "../components/Footer";
+import { RootStackParamList } from "../../../App";
+import { Footer } from "../../components/Footer";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Register">;
@@ -31,7 +32,7 @@ export default function Registration() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState<"student" | "faculty">("student");
+  const [role, setRole] = useState<"Student" | "Faculty">("Student");
   // Inline error states
   const [nameError, setNameError] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -87,12 +88,15 @@ export default function Registration() {
 
     setLoading(true);
     try {
+      // we cast to `any` to avoid strict TS mismatch if AuthContext.register signature hasn't been extended
       const result = await register({
         name: name.trim(),
         email: email.trim().toLowerCase(),
         password,
         confirmPassword,
-      });
+        // ensure the server receives the proper enum value (match mongoose enum: "Student" | "Faculty")
+        userType: role === "Faculty" ? "Faculty" : "Student",
+      } as any);
 
       if (result.success) {
         Alert.alert("Success", "Account created! Please log in.");
@@ -101,7 +105,8 @@ export default function Registration() {
         setEmailError(result.error || "Registration failed");
         Alert.alert("Error", result.error || "Registration failed");
       }
-    } catch {
+    } catch (err) {
+      console.error("Registration error:", err);
       setEmailError("Unexpected error occurred");
       Alert.alert("Error", "Unexpected error occurred");
     } finally {
@@ -114,8 +119,9 @@ export default function Registration() {
     else navigation.reset({ index: 0, routes: [{ name: "Login" }] });
   };
 
-  const styles = useMemo(() =>
-    StyleSheet.create({
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
         safeArea: { flex: 1 },
         backgroundImage: { flex: 1, width: "100%", height: "100%" },
         backgroundImageInner: { resizeMode: "cover" },
@@ -191,10 +197,10 @@ export default function Registration() {
           color: COLORS.text,
         },
         errorText: {
-        color: "red",
-        fontSize: 13,
-        marginBottom: 8,
-      },
+          color: "red",
+          fontSize: 13,
+          marginBottom: 8,
+        },
         btn: {
           minHeight: 48,
           borderRadius: 12,
@@ -240,12 +246,12 @@ export default function Registration() {
             <TouchableOpacity
               style={[
                 styles.roleButton,
-                role === "student" && styles.roleButtonActive,
+                role === "Student" && styles.roleButtonActive,
               ]}
-              onPress={() => setRole("student")}
+              onPress={() => setRole("Student")}
             >
               <Text
-                style={[styles.roleText, role === "student" && styles.roleTextActive]}
+                style={[styles.roleText, role === "Student" && styles.roleTextActive]}
               >
                 Student
               </Text>
@@ -254,12 +260,12 @@ export default function Registration() {
             <TouchableOpacity
               style={[
                 styles.roleButton,
-                role === "faculty" && styles.roleButtonActive,
+                role === "Faculty" && styles.roleButtonActive,
               ]}
-              onPress={() => setRole("faculty")}
+              onPress={() => setRole("Faculty")}
             >
               <Text
-                style={[styles.roleText, role === "faculty" && styles.roleTextActive]}
+                style={[styles.roleText, role === "Faculty" && styles.roleTextActive]}
               >
                 Faculty
               </Text>
@@ -324,17 +330,18 @@ export default function Registration() {
       </View>
     </SafeAreaView>
   );
+
   if (Platform.OS === "web") {
     return (
       <View style={styles.webContainer}>
         <ImageBackground
-          source={require("../../../assets/wallpaper-a.jpg")}
+          source={require("../../../../assets/wallpaper-a.jpg")}
           style={styles.blurredBackground}
           resizeMode="cover"
           blurRadius={15}
         />
         <ImageBackground
-          source={require("../../../assets/wallpaper-a.jpg")}
+          source={require("../../../../assets/wallpaper-a.jpg")}
           style={styles.backgroundImage}
           imageStyle={styles.backgroundImageInner}
           resizeMode="contain"
@@ -347,7 +354,7 @@ export default function Registration() {
 
   return (
     <ImageBackground
-      source={require("../../../assets/wallpaper-a.jpg")}
+      source={require("../../../../assets/wallpaper-a.jpg")}
       style={styles.backgroundImage}
       imageStyle={styles.backgroundImageInner}
       resizeMode="cover"

@@ -9,13 +9,13 @@ import {
     Platform,
     useWindowDimensions
 } from "react-native";
-import { useAuth } from "../contexts/AuthContext";
-import { COLORS } from "../constants/colors";
-import { SPACING } from "../constants/spacing";
+import { useAuth } from "../../contexts/AuthContext";
+import { COLORS } from "../../constants/colors";
+import { SPACING } from "../../constants/spacing";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../App";
-import { Footer } from "../components/Footer";
+import { RootStackParamList } from "../../../App";
+import { Footer } from "../../components/Footer";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "RegLogin">;
@@ -156,7 +156,7 @@ export default function RegLogin() {
         setLoading(true);
         try {
             const result = await login(email.trim().toLowerCase(), password);
-
+            
             if (result.success) {
                 navigation.replace("Main");
             } else {
@@ -259,13 +259,13 @@ export default function RegLogin() {
         return (
             <View style={styles.webContainer}>
                 <ImageBackground
-                    source={require('../../../assets/wallpaper-a.jpg')}
+                    source={require('../../../../assets/wallpaper-a.jpg')}
                     style={styles.blurredBackground}
                     resizeMode="cover"
                     blurRadius={15}
                 />
                 <ImageBackground
-                    source={require('../../../assets/wallpaper-a.jpg')}
+                    source={require('../../../../assets/wallpaper-a.jpg')}
                     style={styles.backgroundImage}
                     imageStyle={styles.backgroundImageInner}
                     resizeMode="contain"
@@ -278,7 +278,7 @@ export default function RegLogin() {
 
     return (
         <ImageBackground
-            source={require('../../../assets/wallpaper-a.jpg')}
+            source={require('../../../../assets/wallpaper-a.jpg')}
             style={styles.backgroundImage}
             imageStyle={styles.backgroundImageInner}
             resizeMode="cover"

@@ -10,11 +10,11 @@ import {
   Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { OpportunityCard } from '../components/OpportunityCard';
-import { mockOpportunities } from '../data/mockData';
-import { COLORS } from '../constants/colors';
-import { SPACING } from '../constants/spacing';
-import { Opportunity } from '../types';
+import { OpportunityCard } from '../../components/OpportunityCard';
+import { mockOpportunities } from '../../data/mockData';
+import { COLORS } from '../../constants/colors';
+import { SPACING } from '../../constants/spacing';
+import { Opportunity } from '../../types';
 
 export const OpportunitiesScreen: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState('All');

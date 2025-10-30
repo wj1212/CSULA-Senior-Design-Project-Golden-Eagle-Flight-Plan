@@ -1,3 +1,4 @@
+// src/screens/auth/LoginPage.tsx
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
@@ -9,12 +10,12 @@ import {
   useWindowDimensions,
 } from 'react-native';
 // import * as AuthSession from 'expo-auth-session'; // 🔒 keep for future Microsoft login
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { StackScreenProps } from '@react-navigation/stack';
-import { RootStackParamList } from '../../App';
-import { COLORS } from '../constants/colors';
+import { RootStackParamList } from '../../../App';
+import { COLORS } from '../../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Footer } from '../components/Footer';
+import { Footer } from '../../components/Footer';
 
 type Properties = StackScreenProps<RootStackParamList, 'Login'>;
 
@@ -23,34 +24,11 @@ export default function LoginPage({ navigation }: Properties) {
   const { user } = useAuth();
   const [loadingSSO, setLoadingSSO] = useState(false);
 
-  // Microsoft login request configuration (⚠️ kept for later use)
-  /*
-  const [request, response, promptAsync] = AuthSession.useAuthRequest(
-    {
-      clientId: 'your-microsoft-client-id',
-      redirectUri: AuthSession.makeRedirectUri(),
-      scopes: ['openid', 'profile', 'email'],
-      responseType: 'id_token',
-    },
-    {
-      authorizationEndpoint:
-        'https://login.microsoftonline.com/calstatela.edu/oauth2/v2.0/authorize',
-    }
-  );
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      setLoadingSSO(false);
-      navigation.replace('Register');
-    } else if (response?.type === 'error' || response?.type === 'dismiss') {
-      setLoadingSSO(false);
-    }
-  }, [response, navigation]);
-  */
-
   // Redirect to main app if user is already logged in
   useEffect(() => {
     if (user) {
+      // navigation target is handled by BottomTabNavigator rendering; navigating to Main will show the
+      // appropriate UI for the user type.
       navigation.replace('Main');
     }
   }, [user, navigation]);
@@ -176,18 +154,6 @@ export default function LoginPage({ navigation }: Properties) {
         Use your Cal State LA credentials or continue with a regular account.
       </Text>
 
-      {/* Microsoft SSO (⚠️ placeholder for later use) */}
-      {/* 
-      <ThemedButton
-        label={loadingSSO ? 'Connecting…' : 'Login with Microsoft'}
-        onPress={async () => {
-          setLoadingSSO(true);
-          await promptAsync();
-        }}
-        disabled={!request || loadingSSO}
-      />
-      */}
-
       <ThemedButton
         label="Regular Log in"
         onPress={() => navigation.replace('RegLogin')}
@@ -210,13 +176,13 @@ export default function LoginPage({ navigation }: Properties) {
     return (
       <View style={styles.webContainer}>
         <ImageBackground
-          source={require('../../../assets/wallpaper-a.jpg')}
+          source={require('../../../../assets/wallpaper-a.jpg')}
           style={styles.blurredBackground}
           resizeMode="cover"
           blurRadius={15}
         />
         <ImageBackground
-          source={require('../../../assets/wallpaper-a.jpg')}
+          source={require('../../../../assets/wallpaper-a.jpg')}
           style={styles.backgroundImage}
           imageStyle={styles.backgroundImageInner}
           resizeMode="contain"
@@ -234,7 +200,7 @@ export default function LoginPage({ navigation }: Properties) {
 
   return (
     <ImageBackground
-      source={require('../../../assets/wallpaper-a.jpg')}
+      source={require('../../../../assets/wallpaper-a.jpg')}
       style={styles.backgroundImage}
       imageStyle={styles.backgroundImageInner}
       resizeMode="contain"

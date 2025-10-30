@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS } from '../constants/colors';
-import { SPACING } from '../constants/spacing';
+import { COLORS } from '../../constants/colors';
+import { SPACING } from '../../constants/spacing';
 
 interface PlaceholderScreenProps {
   title: string;

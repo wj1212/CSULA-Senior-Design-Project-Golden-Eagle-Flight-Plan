@@ -1,3 +1,4 @@
+// src/screens/student/ProfileScreen.tsx
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -12,11 +13,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Checkbox from "expo-checkbox";
 import { Dropdown } from "react-native-element-dropdown";
 import { useNavigation } from "@react-navigation/native";
-import { useAuth } from "../contexts/AuthContext";
-import { RootStackParamList } from "../../App";
+import { useAuth } from "../../contexts/AuthContext";
+import { RootStackParamList } from "../../../App";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { COLORS } from "../constants/colors";
-import { SPACING } from "../constants/spacing";
+import { COLORS } from "../../constants/colors";
+import { SPACING } from "../../constants/spacing";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Profile">;
 
@@ -164,22 +165,26 @@ export default function ProfileScreen() {
     try {
       const profileData = {
         major,
-        gpa: parseFloat(gpa),
+        // ensure NaN isn't sent
+        gpa: gpa ? parseFloat(gpa) : 0,
         financialStatus,
         gradeLevel,
         commuteStatus,
         careerInterests,
         osd,
-        credits: parseInt(credits) || 0,
+        credits: credits ? parseInt(credits, 10) || 0 : 0,
       };
+
       const result = await updateProfile(profileData);
       if (result.success) {
+        // keep user on profile page so they can confirm changes visually
         Alert.alert("Success", "Profile updated successfully!");
         navigation.replace("Main");
       } else {
         Alert.alert("Error", result.error || "Failed to save profile");
       }
     } catch (err) {
+      console.error("Profile save error:", err);
       Alert.alert("Error", "An unexpected error occurred");
     } finally {
       setLoading(false);

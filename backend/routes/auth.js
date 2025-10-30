@@ -9,7 +9,7 @@ const router = express.Router();
 // REGISTER
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, userType } = req.body;
 
     const existing = await User.findOne({ email });
     if (existing) {
@@ -23,6 +23,7 @@ router.post("/register", async (req, res) => {
       name,
       email,
       password: hashed,
+      userType: userType || "Student"
     });
 
     await newUser.save();
@@ -38,6 +39,7 @@ router.post("/register", async (req, res) => {
         id: newUser._id,
         name: newUser.name,
         email: newUser.email,
+        userType: newUser.userType,
       },
     });
   } catch (err) {
@@ -71,6 +73,7 @@ router.post("/login", async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        userType: user.userType,
         gradeLevel: user.gradeLevel,
         major: user.major,
         degreeType: user.degreeType,

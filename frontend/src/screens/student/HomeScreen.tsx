@@ -13,15 +13,15 @@ import {
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { StatCard } from '../components/StatCard';
-import { OpportunityCard } from '../components/OpportunityCard';
-import { mockUser, mockOpportunities, mockCourses } from '../data/mockData';
-import { CircleButton } from '../components/CircleButton';
-import { COLORS } from '../constants/colors';
-import { SPACING } from '../constants/spacing';
+import { StatCard } from '../../components/StatCard';
+import { OpportunityCard } from '../../components/OpportunityCard';
+import { mockUser, mockOpportunities, mockCourses } from '../../data/mockData';
+import { CircleButton } from '../../components/CircleButton';
+import { COLORS } from '../../constants/colors';
+import { SPACING } from '../../constants/spacing';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../contexts/AuthContext';
-import { Opportunity } from '../types';
+import { useAuth } from '../../contexts/AuthContext';
+import { Opportunity } from '../../types';
 export const HomeScreen: React.FC = () => {
   const { width } = useWindowDimensions();
   const { user, loading } = useAuth();
