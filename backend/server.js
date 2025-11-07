@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import connectDB from "./db.js";
 import authRoutes from "./routes/auth.js";
+import resourceRoutes from "./routes/resources.js";
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(bodyParser.json());
 
 // routes
 app.use("/api/auth", authRoutes);
+app.use("/api", resourceRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running ✅");

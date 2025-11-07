@@ -1,78 +1,250 @@
 // src/screens/faculty/FacultyDashboard.tsx
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
 import { COLORS } from '../../constants/colors';
 import { SPACING } from '../../constants/spacing';
+import * as resourceService from '../../services/resourceService';
 
-type Resource = { id: string; title: string; url: string };
-type EventItem = { id: string; title: string; date: string; location?: string; description?: string };
+type Resource = resourceService.Resource;
+type EventItem = resourceService.Event;
 
 const FacultyDashboard: React.FC = () => {
   const [s, set] = useState({
-    resources: [
-      { id: '1', title: 'Syllabus Template', url: 'https://example.edu/syllabus' },
-      { id: '2', title: 'Faculty Handbook', url: 'https://example.edu/handbook' },
-    ] as Resource[],
-    resource: { title: '', url: '' },
+    resources: [] as Resource[],
+    resource: { title: '', url: '', description: '', hashtags: '' },
 
     events: [] as EventItem[],
-    event: { title: '', date: '', location: '', description: '' },
-
-    hashtags: ['#faculty', '#events'],
-    tag: '',
+    event: { title: '', date: '', location: '', description: '', hashtags: '' },
   });
 
-  const on = (k: keyof typeof s) => (v: any) => set(x => ({ ...x, [k]: v }));
+  const [loading, setLoading] = useState(false);
+
+  // Load resources and events on mount
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [resourcesRes, eventsRes] = await Promise.all([
+        resourceService.getResources(),
+        resourceService.getEvents(),
+      ]);
+
+      set((prev) => ({
+        ...prev,
+        resources: resourcesRes.success ? resourcesRes.resources || [] : [],
+        events: eventsRes.success ? eventsRes.events || [] : [],
+      }));
+    } catch (error) {
+      console.error('Error loading data:', error);
+      Alert.alert('Error', 'Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const merge = (k: 'resource' | 'event') => (p: Partial<typeof s[typeof k]>) =>
     set(x => ({ ...x, [k]: { ...x[k], ...p } }));
 
-  const addResource = useCallback(() => {
-    const { title, url } = s.resource;
-    if (!title.trim() || !url.trim()) return;
-    set(x => ({
-      ...x,
-      resources: [...x.resources, { id: String(Date.now()), title: title.trim(), url: url.trim() }],
-      resource: { title: '', url: '' },
-    }));
+  // Parse hashtags from comma-separated string
+  const parseHashtags = (hashtagStr: string): string[] => {
+    if (!hashtagStr.trim()) return [];
+    
+    return hashtagStr
+      .split(',')
+      .map(tag => {
+        tag = tag.trim();
+        return tag.startsWith('#') ? tag : `#${tag}`;
+      })
+      .filter(tag => tag.length > 1);
+  };
+
+  const addResource = useCallback(async () => {
+    console.log('addResource called');
+    const { title, url, description, hashtags } = s.resource;
+    console.log('Resource data:', { title, url, description, hashtags });
+    
+    if (!title.trim() || !url.trim()) {
+      console.log('Validation failed: missing title or url');
+      Alert.alert('Error', 'Title and URL are required');
+      return;
+    }
+
+    const parsedHashtags = parseHashtags(hashtags);
+    console.log('Parsed hashtags:', parsedHashtags);
+
+    setLoading(true);
+    try {
+      const result = await resourceService.createResource({
+        title: title.trim(),
+        url: url.trim(),
+        description: description?.trim(),
+        hashtags: parsedHashtags,
+      });
+
+      console.log('Create resource result:', result);
+
+      if (result.success && result.resource) {
+        set(x => ({
+          ...x,
+          resources: [result.resource!, ...x.resources],
+          resource: { title: '', url: '', description: '', hashtags: '' },
+        }));
+        Alert.alert('Success', 'Resource created successfully');
+      } else {
+        Alert.alert('Error', result.error || 'Failed to create resource');
+      }
+    } catch (error) {
+      console.error('Error creating resource:', error);
+      Alert.alert('Error', 'Failed to create resource');
+    } finally {
+      setLoading(false);
+    }
   }, [s.resource]);
 
-  const removeResource = (id: string) =>
-    set(x => ({ ...x, resources: x.resources.filter(r => r.id !== id) }));
+  const removeResource = async (id: string) => {
+    console.log('removeResource called with id:', id);
+    
+    // For web, use window.confirm since Alert.alert with buttons doesn't work well
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure you want to delete this resource?');
+      if (!confirmed) {
+        console.log('Delete cancelled by user');
+        return;
+      }
+    }
+    
+    const performDelete = async () => {
+      console.log('Performing delete for resource:', id);
+      setLoading(true);
+      try {
+        const result = await resourceService.deleteResource(id);
+        console.log('Delete result:', result);
+        
+        if (result.success) {
+          set(x => ({ ...x, resources: x.resources.filter(r => r._id !== id) }));
+          Alert.alert('Success', 'Resource deleted');
+        } else {
+          Alert.alert('Error', result.error || 'Failed to delete resource');
+        }
+      } catch (error) {
+        console.error('Error deleting resource:', error);
+        Alert.alert('Error', 'Failed to delete resource');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // For mobile (iOS/Android), use Alert.alert with buttons
+    if (Platform.OS !== 'web') {
+      Alert.alert(
+        'Delete Resource',
+        'Are you sure you want to delete this resource?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: performDelete },
+        ]
+      );
+    } else {
+      // Already confirmed via window.confirm above
+      await performDelete();
+    }
+  };
 
-  const addEvent = useCallback(() => {
-    const { title, date, location, description } = s.event;
-    if (!title.trim() || !date.trim()) return;
-    set(x => ({
-      ...x,
-      events: [
-        ...x.events,
-        {
-          id: String(Date.now()),
-          title: title.trim(),
-          date: date.trim(),
-          location: location.trim(),
-          description: description.trim(),
-        },
-      ],
-      event: { title: '', date: '', location: '', description: '' },
-    }));
+  const addEvent = useCallback(async () => {
+    console.log('addEvent called');
+    const { title, date, location, description, hashtags } = s.event;
+    console.log('Event data:', { title, date, location, description, hashtags });
+    
+    if (!title.trim() || !date.trim()) {
+      console.log('Validation failed: missing title or date');
+      Alert.alert('Error', 'Title and date are required');
+      return;
+    }
+
+    const parsedHashtags = parseHashtags(hashtags);
+    console.log('Parsed hashtags:', parsedHashtags);
+
+    setLoading(true);
+    try {
+      const result = await resourceService.createEvent({
+        title: title.trim(),
+        date: date.trim(),
+        location: location?.trim(),
+        description: description?.trim(),
+        hashtags: parsedHashtags,
+      });
+
+      console.log('Create event result:', result);
+
+      if (result.success && result.event) {
+        set(x => ({
+          ...x,
+          events: [result.event!, ...x.events],
+          event: { title: '', date: '', location: '', description: '', hashtags: '' },
+        }));
+        Alert.alert('Success', 'Event created successfully');
+      } else {
+        Alert.alert('Error', result.error || 'Failed to create event');
+      }
+    } catch (error) {
+      console.error('Error creating event:', error);
+      Alert.alert('Error', 'Failed to create event');
+    } finally {
+      setLoading(false);
+    }
   }, [s.event]);
 
-  const removeEvent = (id: string) =>
-    set(x => ({ ...x, events: x.events.filter(e => e.id !== id) }));
-
-  const addHashtag = useCallback(() => {
-    const tag = (s.tag.startsWith('#') ? s.tag : `#${s.tag}`).trim();
-    if (!tag || s.hashtags.includes(tag)) return;
-    set(x => ({
-      ...x,
-      hashtags: [...x.hashtags, tag],
-      tag: '',
-    }));
-  }, [s.tag, s.hashtags]);
-
-  const removeHashtag = (t: string) =>
-    set(x => ({ ...x, hashtags: x.hashtags.filter(xTag => xTag !== t) }));
+  const removeEvent = async (id: string) => {
+    console.log('removeEvent called with id:', id);
+    
+    // For web, use window.confirm since Alert.alert with buttons doesn't work well
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure you want to delete this event?');
+      if (!confirmed) {
+        console.log('Delete cancelled by user');
+        return;
+      }
+    }
+    
+    const performDelete = async () => {
+      console.log('Performing delete for event:', id);
+      setLoading(true);
+      try {
+        const result = await resourceService.deleteEvent(id);
+        console.log('Delete result:', result);
+        
+        if (result.success) {
+          set(x => ({ ...x, events: x.events.filter(e => e._id !== id) }));
+          Alert.alert('Success', 'Event deleted');
+        } else {
+          Alert.alert('Error', result.error || 'Failed to delete event');
+        }
+      } catch (error) {
+        console.error('Error deleting event:', error);
+        Alert.alert('Error', 'Failed to delete event');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // For mobile (iOS/Android), use Alert.alert with buttons
+    if (Platform.OS !== 'web') {
+      Alert.alert(
+        'Delete Event',
+        'Are you sure you want to delete this event?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: performDelete },
+        ]
+      );
+    } else {
+      // Already confirmed via window.confirm above
+      await performDelete();
+    }
+  };
 
   // ✅ Keep stable Input to prevent focus loss
   const Input = useCallback(
@@ -85,6 +257,15 @@ const FacultyDashboard: React.FC = () => {
     ),
     []
   );
+
+  if (loading && s.resources.length === 0 && s.events.length === 0) {
+    return (
+      <View style={[styles.content, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={{ color: COLORS.text, marginTop: SPACING.md }}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -102,53 +283,98 @@ const FacultyDashboard: React.FC = () => {
           marginBottom: SPACING.lg,
         }}
       >
-        Access resources, submit events, and manage hashtags.
+        Add resources and events with hashtags for students to browse.
       </Text>
 
       {/* RESOURCES SECTION */}
-      <Section title="Resources">
-        <View style={styles.row}>
-          <Input
-            placeholder="Resource title"
-            value={s.resource.title}
-            onChangeText={(v: string) => merge('resource')({ title: v })}
-            style={styles.flex}
-          />
-          <Input
-            placeholder="https://link"
-            value={s.resource.url}
-            onChangeText={(v: string) => merge('resource')({ url: v })}
-            autoCapitalize="none"
-            keyboardType="url"
-            style={styles.flex}
-          />
-        </View>
-        <Button label="Add Resource" onPress={addResource} />
-        {s.resources.map(r => (
-          <View key={r.id} style={[styles.listRow, styles.row, { justifyContent: 'space-between' }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.listTitle}>{r.title}</Text>
-              <Text style={styles.link} numberOfLines={1}>{r.url}</Text>
-            </View>
-            <TouchableOpacity onPress={() => removeResource(r.id)} style={styles.chipX}>
-              <Text style={styles.chipXText}>×</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
+      <Section title="Add Resource">
+        <Text style={styles.helpText}>
+          Add a resource link for students. Include hashtags to help categorize it.
+        </Text>
+        <Input
+          placeholder="Resource title (e.g., Career Workshop)"
+          value={s.resource.title}
+          onChangeText={(v: string) => merge('resource')({ title: v })}
+        />
+        <Input
+          placeholder="URL (e.g., https://example.com)"
+          value={s.resource.url}
+          onChangeText={(v: string) => merge('resource')({ url: v })}
+          autoCapitalize="none"
+          keyboardType="url"
+        />
+        <Input
+          placeholder="Description (optional)"
+          value={s.resource.description}
+          onChangeText={(v: string) => merge('resource')({ description: v })}
+          multiline
+          style={{ minHeight: 60 }}
+        />
+        <Input
+          placeholder="Hashtags (e.g., career, workshop, internships)"
+          value={s.resource.hashtags}
+          onChangeText={(v: string) => merge('resource')({ hashtags: v })}
+          autoCapitalize="none"
+        />
+        <Text style={styles.hashtagHint}>
+          💡 Tip: Separate hashtags with commas. The # symbol is optional.
+        </Text>
+        <Button label={loading ? 'Adding...' : 'Add Resource'} onPress={addResource} disabled={loading} />
+        
+        {s.resources.length === 0 ? (
+          <Text style={styles.emptyText}>No resources yet — add one above.</Text>
+        ) : (
+          <>
+            <Text style={styles.listHeader}>Your Resources ({s.resources.length})</Text>
+            {s.resources.map(r => (
+              <View key={r._id} style={styles.card}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.listTitle}>{r.title}</Text>
+                  <Text style={styles.link} numberOfLines={1}>{r.url}</Text>
+                  {r.description && <Text style={styles.body}>{r.description}</Text>}
+                  <View style={styles.chipsWrap}>
+                    {r.hashtags.map((tag, idx) => (
+                      <View key={`${tag}-${idx}`} style={styles.chipSmall}>
+                        <Text style={styles.chipTextSmall}>{tag}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+                <TouchableOpacity 
+                  onPress={() => {
+                    console.log('Delete button clicked for resource:', r._id);
+                    removeResource(r._id);
+                  }} 
+                  style={styles.deleteBtn}
+                >
+                  <Text style={styles.deleteBtnText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </>
+        )}
       </Section>
 
       {/* EVENTS SECTION */}
-      <Section title="Enter Event">
-        {[{ p: 'Event title', k: 'title' },
-          { p: 'Date & time (e.g., 2025-11-20 15:00)', k: 'date' },
-          { p: 'Location (optional)', k: 'location' }].map(f => (
-          <Input
-            key={f.k}
-            placeholder={f.p}
-            value={(s.event as any)[f.k]}
-            onChangeText={(v: string) => merge('event')({ [f.k]: v } as any)}
-          />
-        ))}
+      <Section title="Add Event">
+        <Text style={styles.helpText}>
+          Create an event for students. Add hashtags to make it easy to discover.
+        </Text>
+        <Input
+          placeholder="Event title (e.g., AI Research Symposium)"
+          value={s.event.title}
+          onChangeText={(v: string) => merge('event')({ title: v })}
+        />
+        <Input
+          placeholder="Date & time (e.g., Nov 20, 2025 at 3:00 PM)"
+          value={s.event.date}
+          onChangeText={(v: string) => merge('event')({ date: v })}
+        />
+        <Input
+          placeholder="Location (optional, e.g., King Hall Room 101)"
+          value={s.event.location}
+          onChangeText={(v: string) => merge('event')({ location: v })}
+        />
         <Input
           placeholder="Description (optional)"
           value={s.event.description}
@@ -156,48 +382,50 @@ const FacultyDashboard: React.FC = () => {
           multiline
           style={{ minHeight: 80 }}
         />
-        <Button label="Add Event" onPress={addEvent} />
+        <Input
+          placeholder="Hashtags (e.g., research, AI, networking)"
+          value={s.event.hashtags}
+          onChangeText={(v: string) => merge('event')({ hashtags: v })}
+          autoCapitalize="none"
+        />
+        <Text style={styles.hashtagHint}>
+          💡 Tip: Separate hashtags with commas. The # symbol is optional.
+        </Text>
+        <Button label={loading ? 'Adding...' : 'Add Event'} onPress={addEvent} disabled={loading} />
+        
         {s.events.length === 0 ? (
           <Text style={styles.emptyText}>No events yet — add one above.</Text>
         ) : (
-          s.events.map(e => (
-            <View key={e.id} style={[styles.card, styles.row, { justifyContent: 'space-between' }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.listTitle}>{e.title}</Text>
-                <Text style={styles.dim}>{e.date}</Text>
-                {!!e.location && <Text style={styles.dim}>{e.location}</Text>}
-                {!!e.description && <Text style={styles.body}>{e.description}</Text>}
+          <>
+            <Text style={styles.listHeader}>Your Events ({s.events.length})</Text>
+            {s.events.map(e => (
+              <View key={e._id} style={styles.card}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.listTitle}>{e.title}</Text>
+                  <Text style={styles.dim}>📅 {e.date}</Text>
+                  {!!e.location && <Text style={styles.dim}>📍 {e.location}</Text>}
+                  {!!e.description && <Text style={styles.body}>{e.description}</Text>}
+                  <View style={styles.chipsWrap}>
+                    {e.hashtags.map((tag, idx) => (
+                      <View key={`${tag}-${idx}`} style={styles.chipSmall}>
+                        <Text style={styles.chipTextSmall}>{tag}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+                <TouchableOpacity 
+                  onPress={() => {
+                    console.log('Delete button clicked for event:', e._id);
+                    removeEvent(e._id);
+                  }} 
+                  style={styles.deleteBtn}
+                >
+                  <Text style={styles.deleteBtnText}>Delete</Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={() => removeEvent(e.id)} style={styles.chipX}>
-                <Text style={styles.chipXText}>×</Text>
-              </TouchableOpacity>
-            </View>
-          ))
+            ))}
+          </>
         )}
-      </Section>
-
-      {/* HASHTAGS SECTION */}
-      <Section title="Hashtags">
-        <View style={styles.row}>
-          <Input
-            placeholder="Add hashtag (e.g., #workshop)"
-            value={s.tag}
-            onChangeText={(v: string) => on('tag')(v)}
-            autoCapitalize="none"
-            style={styles.flex}
-          />
-          <Button small label="Add" onPress={addHashtag} />
-        </View>
-        <View style={styles.chipsWrap}>
-          {s.hashtags.map(tag => (
-            <View key={tag} style={styles.chip}>
-              <Text style={styles.chipText}>{tag}</Text>
-              <TouchableOpacity onPress={() => removeHashtag(tag)} style={styles.chipX}>
-                <Text style={styles.chipXText}>×</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
       </Section>
     </ScrollView>
   );
@@ -212,8 +440,15 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
     {children}
   </View>
 );
-const Button: React.FC<{ label: string; onPress: () => void; small?: boolean }> = ({ label, onPress, small }) => (
-  <TouchableOpacity onPress={onPress} style={[styles.button, small && styles.buttonSm]}>
+const Button: React.FC<{ label: string; onPress: () => void; small?: boolean; disabled?: boolean }> = ({ label, onPress, small, disabled }) => (
+  <TouchableOpacity 
+    onPress={() => {
+      console.log(`Button "${label}" pressed`);
+      onPress();
+    }} 
+    style={[styles.button, small && styles.buttonSm, disabled && styles.buttonDisabled]} 
+    disabled={disabled}
+  >
     <Text style={styles.buttonText}>{label}</Text>
   </TouchableOpacity>
 );
@@ -235,31 +470,54 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
 
-  button: { backgroundColor: COLORS.primary, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.lg, borderRadius: 10, alignSelf: 'flex-start' },
+  button: { backgroundColor: COLORS.primary, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.lg, borderRadius: 10, alignSelf: 'flex-start', marginTop: SPACING.sm },
   buttonSm: { paddingVertical: SPACING.xs, paddingHorizontal: SPACING.md },
+  buttonDisabled: { opacity: 0.5 },
   buttonText: { color: COLORS.onPrimary, fontWeight: '700' },
+  
+  helpText: { color: COLORS.text, opacity: 0.7, fontSize: 13, marginBottom: SPACING.sm },
+  hashtagHint: { color: COLORS.primary, fontSize: 12, marginTop: -SPACING.xs, marginBottom: SPACING.xs, fontStyle: 'italic' },
 
-  listRow: { paddingVertical: SPACING.sm },
-  listTitle: { fontWeight: '700', color: COLORS.text, marginBottom: 2 },
-  link: { color: COLORS.primary },
-  body: { color: COLORS.text },
-  dim: { color: COLORS.text, opacity: 0.7 },
+  listHeader: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginTop: SPACING.lg, marginBottom: SPACING.sm },
+  listTitle: { fontWeight: '700', color: COLORS.text, marginBottom: 4, fontSize: 15 },
+  link: { color: COLORS.primary, fontSize: 13 },
+  body: { color: COLORS.text, marginTop: SPACING.xs, fontSize: 13, lineHeight: 18 },
+  dim: { color: COLORS.text, opacity: 0.7, fontSize: 13, marginTop: 2 },
 
-  card: { backgroundColor: COLORS.surface, borderRadius: 10, padding: SPACING.md, marginTop: SPACING.sm },
-  row: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center' },
-  flex: { flex: 1 },
+  card: { 
+    backgroundColor: COLORS.surface, 
+    borderRadius: 10, 
+    padding: SPACING.md, 
+    marginBottom: SPACING.sm,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
 
-  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.sm },
-  chip: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, borderRadius: 999 },
-  chipText: { color: COLORS.text },
-  chipX: { marginLeft: 6 },
-  chipXText: { color: COLORS.text, opacity: 0.7, fontSize: 18, lineHeight: 18 },
+  deleteBtn: {
+    backgroundColor: '#ef4444',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: 6,
+    marginLeft: SPACING.sm,
+  },
+  deleteBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginTop: SPACING.sm },
+  chipSmall: { backgroundColor: COLORS.primary, paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: 12 },
+  chipTextSmall: { color: COLORS.onPrimary, fontSize: 11, fontWeight: '600' },
 
   emptyText: {
     color: COLORS.text,
     opacity: 0.6,
     fontStyle: 'italic',
     textAlign: 'center',
-    marginVertical: SPACING.sm,
+    marginVertical: SPACING.md,
+    fontSize: 14,
   },
 });

@@ -6,6 +6,7 @@ import { HomeScreen } from '../screens/student/HomeScreen';
 import { OpportunitiesScreen } from '../screens/student/OpportunitiesScreen';
 import { PlaceholderScreen } from '../screens/student/PlaceholderScreen';
 import { CoursesScreen } from '../screens/student/CoursesScreen';
+import { ResourcesScreen } from '../screens/student/ResourcesScreen';
 import { Image, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
@@ -20,7 +21,7 @@ type NavParamList = {
   Opportunities: undefined;
   Courses: undefined;
   Plan: undefined;
-  Community: undefined;
+  Resources: undefined;
   Settings: undefined;
   Profile: undefined;
   FacultyDashboard: undefined;
@@ -139,8 +140,8 @@ export const BottomTabNavigator: React.FC = () => {
             case 'Plan':
               iconName = focused ? 'school' : 'school-outline';
               break;
-            case 'Community':
-              iconName = focused ? 'people' : 'people-outline';
+            case 'Resources':
+              iconName = focused ? 'library' : 'library-outline';
               break;
             case 'Settings':
               iconName = focused ? 'settings' : 'settings-outline';
@@ -202,7 +203,7 @@ export const BottomTabNavigator: React.FC = () => {
       <Tab.Screen name="Opportunities" component={OpportunitiesScreen} />
       <Tab.Screen name="Courses" component={CoursesScreen} />
       <Tab.Screen name="Plan" children={() => <PlaceholderScreen title="My Flight Plan" />} />
-      <Tab.Screen name="Community" children={() => <PlaceholderScreen title="Community" />} />
+      <Tab.Screen name="Resources" component={ResourcesScreen} />
       <Tab.Screen name="Settings" children={() => <PlaceholderScreen title="Settings" />} />
     </Tab.Navigator>
   );

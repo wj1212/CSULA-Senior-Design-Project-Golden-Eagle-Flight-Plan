@@ -1,5 +1,6 @@
 export type ThemeColors = {
   primary: string;
+  secondary: string;
   black: string;
   white: string;
 
@@ -25,6 +26,7 @@ export type ThemeColors = {
 export const COLORS: ThemeColors = {
 
   primary: '#FDB927', 
+  secondary: '#552583', // Purple for events
   black: '#000000',
   white: '#FFFFFF',
 
