@@ -109,6 +109,45 @@ export const createEvent = async (data: {
   }
 };
 
+// Faculty: Update a resource
+export const updateResource = async (
+  id: string,
+  data: {
+    title: string;
+    url: string;
+    description?: string;
+    hashtags?: string[];
+  }
+): Promise<{ success: boolean; resource?: Resource; error?: string }> => {
+  try {
+    console.log('Updating resource with id:', id, 'data:', data);
+    const token = await getStoredToken();
+    console.log('Token exists for update:', !!token);
+    
+    const response = await fetch(`${API_URL}/resources/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    console.log('Update response status:', response.status);
+    const result = await response.json();
+    console.log('Update response data:', result);
+
+    if (response.ok) {
+      return { success: true, resource: result.resource };
+    } else {
+      return { success: false, error: result.message || 'Failed to update resource' };
+    }
+  } catch (error: any) {
+    console.error('Update resource error:', error);
+    return { success: false, error: error.message || 'Network error' };
+  }
+};
+
 // Faculty: Delete a resource
 export const deleteResource = async (
   id: string
@@ -136,6 +175,46 @@ export const deleteResource = async (
     }
   } catch (error: any) {
     console.error('Delete resource error:', error);
+    return { success: false, error: error.message || 'Network error' };
+  }
+};
+
+// Faculty: Update an event
+export const updateEvent = async (
+  id: string,
+  data: {
+    title: string;
+    date: string;
+    location?: string;
+    description?: string;
+    hashtags?: string[];
+  }
+): Promise<{ success: boolean; event?: Event; error?: string }> => {
+  try {
+    console.log('Updating event with id:', id, 'data:', data);
+    const token = await getStoredToken();
+    console.log('Token exists for update:', !!token);
+    
+    const response = await fetch(`${API_URL}/events/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    console.log('Update response status:', response.status);
+    const result = await response.json();
+    console.log('Update response data:', result);
+
+    if (response.ok) {
+      return { success: true, event: result.event };
+    } else {
+      return { success: false, error: result.message || 'Failed to update event' };
+    }
+  } catch (error: any) {
+    console.error('Update event error:', error);
     return { success: false, error: error.message || 'Network error' };
   }
 };

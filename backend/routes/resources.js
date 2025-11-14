@@ -70,6 +70,42 @@ router.post("/events", authenticateToken, async (req, res) => {
   }
 });
 
+// Update a resource (Faculty only - own resources)
+router.put("/resources/:id", authenticateToken, async (req, res) => {
+  try {
+    if (req.user.userType !== "Faculty") {
+      return res.status(403).json({ message: "Only faculty can update resources" });
+    }
+
+    const resource = await Resource.findById(req.params.id);
+    if (!resource) {
+      return res.status(404).json({ message: "Resource not found" });
+    }
+
+    // Allow only the creator to update
+    if (resource.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "You can only update your own resources" });
+    }
+
+    const { title, url, description, hashtags } = req.body;
+
+    if (!title || !url) {
+      return res.status(400).json({ message: "Title and URL are required" });
+    }
+
+    resource.title = title;
+    resource.url = url;
+    resource.description = description || "";
+    resource.hashtags = hashtags || [];
+
+    await resource.save();
+    res.json({ message: "Resource updated successfully", resource });
+  } catch (error) {
+    console.error("Error updating resource:", error);
+    res.status(500).json({ message: "Failed to update resource", error: error.message });
+  }
+});
+
 // Delete a resource (Faculty only - own resources)
 router.delete("/resources/:id", authenticateToken, async (req, res) => {
   try {
@@ -92,6 +128,43 @@ router.delete("/resources/:id", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("Error deleting resource:", error);
     res.status(500).json({ message: "Failed to delete resource", error: error.message });
+  }
+});
+
+// Update an event (Faculty only - own events)
+router.put("/events/:id", authenticateToken, async (req, res) => {
+  try {
+    if (req.user.userType !== "Faculty") {
+      return res.status(403).json({ message: "Only faculty can update events" });
+    }
+
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Allow only the creator to update
+    if (event.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "You can only update your own events" });
+    }
+
+    const { title, date, location, description, hashtags } = req.body;
+
+    if (!title || !date) {
+      return res.status(400).json({ message: "Title and date are required" });
+    }
+
+    event.title = title;
+    event.date = date;
+    event.location = location || "";
+    event.description = description || "";
+    event.hashtags = hashtags || [];
+
+    await event.save();
+    res.json({ message: "Event updated successfully", event });
+  } catch (error) {
+    console.error("Error updating event:", error);
+    res.status(500).json({ message: "Failed to update event", error: error.message });
   }
 });
 

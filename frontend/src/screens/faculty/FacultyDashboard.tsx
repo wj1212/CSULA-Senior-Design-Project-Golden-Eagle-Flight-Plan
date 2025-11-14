@@ -1,6 +1,6 @@
 // src/screens/faculty/FacultyDashboard.tsx
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform, Modal } from 'react-native';
 import { COLORS } from '../../constants/colors';
 import { SPACING } from '../../constants/spacing';
 import * as resourceService from '../../services/resourceService';
@@ -18,6 +18,9 @@ const FacultyDashboard: React.FC = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
+  const [editForm, setEditForm] = useState({ title: '', url: '', date: '', location: '', description: '', hashtags: '' });
 
   // Load resources and events on mount
   useEffect(() => {
@@ -103,6 +106,115 @@ const FacultyDashboard: React.FC = () => {
       setLoading(false);
     }
   }, [s.resource]);
+
+  const startEditResource = (resource: Resource) => {
+    console.log('Starting to edit resource:', resource._id);
+    setEditingResource(resource);
+    setEditForm({
+      title: resource.title,
+      url: resource.url,
+      date: '',
+      location: '',
+      description: resource.description || '',
+      hashtags: resource.hashtags.join(', '),
+    });
+  };
+
+  const startEditEvent = (event: EventItem) => {
+    console.log('Starting to edit event:', event._id);
+    setEditingEvent(event);
+    setEditForm({
+      title: event.title,
+      url: '',
+      date: event.date,
+      location: event.location || '',
+      description: event.description || '',
+      hashtags: event.hashtags.join(', '),
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingResource(null);
+    setEditingEvent(null);
+    setEditForm({ title: '', url: '', date: '', location: '', description: '', hashtags: '' });
+  };
+
+  const saveResourceEdit = async () => {
+    if (!editingResource) return;
+
+    const { title, url, description, hashtags } = editForm;
+    if (!title.trim() || !url.trim()) {
+      Alert.alert('Error', 'Title and URL are required');
+      return;
+    }
+
+    const parsedHashtags = parseHashtags(hashtags);
+
+    setLoading(true);
+    try {
+      const result = await resourceService.updateResource(editingResource._id, {
+        title: title.trim(),
+        url: url.trim(),
+        description: description?.trim(),
+        hashtags: parsedHashtags,
+      });
+
+      if (result.success && result.resource) {
+        set(x => ({
+          ...x,
+          resources: x.resources.map(r => r._id === editingResource._id ? result.resource! : r),
+        }));
+        cancelEdit();
+        Alert.alert('Success', 'Resource updated successfully');
+      } else {
+        Alert.alert('Error', result.error || 'Failed to update resource');
+      }
+    } catch (error) {
+      console.error('Error updating resource:', error);
+      Alert.alert('Error', 'Failed to update resource');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveEventEdit = async () => {
+    if (!editingEvent) return;
+
+    const { title, date, location, description, hashtags } = editForm;
+    if (!title.trim() || !date.trim()) {
+      Alert.alert('Error', 'Title and date are required');
+      return;
+    }
+
+    const parsedHashtags = parseHashtags(hashtags);
+
+    setLoading(true);
+    try {
+      const result = await resourceService.updateEvent(editingEvent._id, {
+        title: title.trim(),
+        date: date.trim(),
+        location: location?.trim(),
+        description: description?.trim(),
+        hashtags: parsedHashtags,
+      });
+
+      if (result.success && result.event) {
+        set(x => ({
+          ...x,
+          events: x.events.map(e => e._id === editingEvent._id ? result.event! : e),
+        }));
+        cancelEdit();
+        Alert.alert('Success', 'Event updated successfully');
+      } else {
+        Alert.alert('Error', result.error || 'Failed to update event');
+      }
+    } catch (error) {
+      console.error('Error updating event:', error);
+      Alert.alert('Error', 'Failed to update event');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const removeResource = async (id: string) => {
     console.log('removeResource called with id:', id);
@@ -340,15 +452,26 @@ const FacultyDashboard: React.FC = () => {
                     ))}
                   </View>
                 </View>
-                <TouchableOpacity 
-                  onPress={() => {
-                    console.log('Delete button clicked for resource:', r._id);
-                    removeResource(r._id);
-                  }} 
-                  style={styles.deleteBtn}
-                >
-                  <Text style={styles.deleteBtnText}>Delete</Text>
-                </TouchableOpacity>
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      console.log('Modify button clicked for resource:', r._id);
+                      startEditResource(r);
+                    }} 
+                    style={styles.modifyBtn}
+                  >
+                    <Text style={styles.modifyBtnText}>Modify</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      console.log('Delete button clicked for resource:', r._id);
+                      removeResource(r._id);
+                    }} 
+                    style={styles.deleteBtn}
+                  >
+                    <Text style={styles.deleteBtnText}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
           </>
@@ -413,20 +536,138 @@ const FacultyDashboard: React.FC = () => {
                     ))}
                   </View>
                 </View>
-                <TouchableOpacity 
-                  onPress={() => {
-                    console.log('Delete button clicked for event:', e._id);
-                    removeEvent(e._id);
-                  }} 
-                  style={styles.deleteBtn}
-                >
-                  <Text style={styles.deleteBtnText}>Delete</Text>
-                </TouchableOpacity>
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      console.log('Modify button clicked for event:', e._id);
+                      startEditEvent(e);
+                    }} 
+                    style={styles.modifyBtn}
+                  >
+                    <Text style={styles.modifyBtnText}>Modify</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      console.log('Delete button clicked for event:', e._id);
+                      removeEvent(e._id);
+                    }} 
+                    style={styles.deleteBtn}
+                  >
+                    <Text style={styles.deleteBtnText}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
           </>
         )}
       </Section>
+
+      {/* EDIT RESOURCE MODAL */}
+      <Modal
+        visible={!!editingResource}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={cancelEdit}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Edit Resource</Text>
+            <ScrollView>
+              <Input
+                placeholder="Resource title"
+                value={editForm.title}
+                onChangeText={(v: string) => setEditForm({ ...editForm, title: v })}
+              />
+              <Input
+                placeholder="URL"
+                value={editForm.url}
+                onChangeText={(v: string) => setEditForm({ ...editForm, url: v })}
+                autoCapitalize="none"
+                keyboardType="url"
+              />
+              <Input
+                placeholder="Description (optional)"
+                value={editForm.description}
+                onChangeText={(v: string) => setEditForm({ ...editForm, description: v })}
+                multiline
+                style={{ minHeight: 60 }}
+              />
+              <Input
+                placeholder="Hashtags (e.g., career, workshop)"
+                value={editForm.hashtags}
+                onChangeText={(v: string) => setEditForm({ ...editForm, hashtags: v })}
+                autoCapitalize="none"
+              />
+              <Text style={styles.hashtagHint}>
+                💡 Tip: Separate hashtags with commas. The # symbol is optional.
+              </Text>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity onPress={cancelEdit} style={[styles.modalButton, styles.cancelButton]}>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={saveResourceEdit} style={[styles.modalButton, styles.saveButton]} disabled={loading}>
+                  <Text style={styles.saveButtonText}>{loading ? 'Saving...' : 'Save'}</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* EDIT EVENT MODAL */}
+      <Modal
+        visible={!!editingEvent}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={cancelEdit}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Edit Event</Text>
+            <ScrollView>
+              <Input
+                placeholder="Event title"
+                value={editForm.title}
+                onChangeText={(v: string) => setEditForm({ ...editForm, title: v })}
+              />
+              <Input
+                placeholder="Date & time"
+                value={editForm.date}
+                onChangeText={(v: string) => setEditForm({ ...editForm, date: v })}
+              />
+              <Input
+                placeholder="Location (optional)"
+                value={editForm.location}
+                onChangeText={(v: string) => setEditForm({ ...editForm, location: v })}
+              />
+              <Input
+                placeholder="Description (optional)"
+                value={editForm.description}
+                onChangeText={(v: string) => setEditForm({ ...editForm, description: v })}
+                multiline
+                style={{ minHeight: 80 }}
+              />
+              <Input
+                placeholder="Hashtags (e.g., research, AI)"
+                value={editForm.hashtags}
+                onChangeText={(v: string) => setEditForm({ ...editForm, hashtags: v })}
+                autoCapitalize="none"
+              />
+              <Text style={styles.hashtagHint}>
+                💡 Tip: Separate hashtags with commas. The # symbol is optional.
+              </Text>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity onPress={cancelEdit} style={[styles.modalButton, styles.cancelButton]}>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={saveEventEdit} style={[styles.modalButton, styles.saveButton]} disabled={loading}>
+                  <Text style={styles.saveButtonText}>{loading ? 'Saving...' : 'Save'}</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -489,18 +730,32 @@ const styles = StyleSheet.create({
     borderRadius: 10, 
     padding: SPACING.md, 
     marginBottom: SPACING.sm,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     borderWidth: 1,
     borderColor: COLORS.border,
   },
 
+  buttonRow: {
+    flexDirection: 'row',
+    gap: SPACING.xs,
+    marginTop: SPACING.sm,
+    alignItems: 'center',
+  },
+  modifyBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: 6,
+  },
+  modifyBtnText: {
+    color: COLORS.onPrimary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
   deleteBtn: {
     backgroundColor: '#ef4444',
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xs,
     borderRadius: 6,
-    marginLeft: SPACING.sm,
   },
   deleteBtnText: {
     color: '#FFFFFF',
@@ -519,5 +774,58 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: SPACING.md,
     fontSize: 14,
+  },
+
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  modalContent: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: SPACING.lg,
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: SPACING.md,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+    marginTop: SPACING.lg,
+    justifyContent: 'flex-end',
+  },
+  modalButton: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderRadius: 8,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  cancelButtonText: {
+    color: COLORS.text,
+    fontWeight: '600',
+  },
+  saveButton: {
+    backgroundColor: COLORS.primary,
+  },
+  saveButtonText: {
+    color: COLORS.onPrimary,
+    fontWeight: '700',
   },
 });
