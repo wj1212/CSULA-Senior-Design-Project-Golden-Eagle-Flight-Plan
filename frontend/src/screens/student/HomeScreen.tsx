@@ -56,6 +56,7 @@ export const HomeScreen: React.FC = () => {
 
   // Use logged in user if available, else mock
   const displayUser = user ?? mockUser;
+  const careerProgress = (((displayUser.credits ?? mockUser.credits) / 120) * 100).toFixed(2);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -76,34 +77,12 @@ export const HomeScreen: React.FC = () => {
               <CircleButton title="Leadership" onPress={handleLeadershipPress} size={circleSize} />
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Recommended Courses - Fall 2025</Text>
-              {mockCourses.map((course) => (
-                <View key={course.id} style={styles.courseCard}>
-                  <View style={styles.courseInfo}>
-                    <Text style={styles.courseCode}>{course.code}</Text>
-                    <Text style={styles.courseName}>{course.name}</Text>
-                    <Text style={styles.courseCredits}>{course.credits} credits</Text>
-                  </View>
-                  <View style={[
-                    styles.priorityBadge,
-                    course.priority === 'High' ? styles.highPriority : styles.mediumPriority
-                  ]}>
-                    <Text style={[
-                      styles.priorityText,
-                      course.priority === 'High' ? styles.highPriorityText : styles.mediumPriorityText
-                    ]}>
-                      {course.priority}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
+
 
             <View style={styles.statsContainer}>
-              <StatCard value={mockUser.gpa} label="Current GPA" />
-              <StatCard value={mockUser.credits} label="Credits Earned" />
-              <StatCard value="73%" label="Degree Progress" />
+              <StatCard value={displayUser.gpa ?? mockUser.gpa} label="Current GPA" />
+              <StatCard value={displayUser.credits ?? mockUser.credits} label="Credits Earned" />
+              <StatCard value={careerProgress + "%"} label="Degree Progress" />
             </View>
 
             <View style={styles.section}>
