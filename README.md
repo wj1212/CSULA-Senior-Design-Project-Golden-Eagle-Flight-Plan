@@ -133,25 +133,17 @@ Our project requires **two terminal windows** running at the same time: one for 
 ### 🧑‍🤝‍🧑 Team Members & Roles
 
 - **Frontend Development:**
-  - Brandon Jou
-  - Kenny Jiang
-  - Jayson Alfaro-Trujillo
   - Jose Mateo Ayala
   - Adan Trejo
-
-- **Backend Development:**
-  - Perla Reyes-Ortega
-  - Jose Oscanoa
-
-- **Frontend & Backend:**
-  - Arman Mahmoodzadeh
-
-- **To Be Determined:**
   - Rana Ashour
   - Jael Estrada
 
+- **Frontend & Backend:**
+  - Arman Mahmoodzadeh
+  - Brandon Jou
+  - Jayson Alfaro-Trujillo
+  - Jose Oscanoa
+  - Perla Reyes-Ortega
+  - Kenny Jiang
+
 ---
-
-
-
-

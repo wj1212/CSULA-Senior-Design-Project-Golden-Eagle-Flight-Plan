@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { HomeScreen } from '../screens/student/HomeScreen';
 import { OpportunitiesScreen } from '../screens/student/OpportunitiesScreen';
 import { PlaceholderScreen } from '../screens/student/PlaceholderScreen';
+import { ScoreboardScreen } from '../screens/student/ScoreboardScreen';
 import { CoursesScreen } from '../screens/student/CoursesScreen';
 import { ResourcesScreen } from '../screens/student/ResourcesScreen';
 import { Image, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
@@ -138,7 +139,7 @@ export const BottomTabNavigator: React.FC = () => {
               iconName = focused ? 'book' : 'book-outline';
               break;
             case 'Plan':
-              iconName = focused ? 'school' : 'school-outline';
+              iconName = focused ? 'trophy' : 'trophy-outline';
               break;
             case 'Resources':
               iconName = focused ? 'library' : 'library-outline';
@@ -202,7 +203,7 @@ export const BottomTabNavigator: React.FC = () => {
       />
       <Tab.Screen name="Opportunities" component={OpportunitiesScreen} />
       <Tab.Screen name="Courses" component={CoursesScreen} />
-      <Tab.Screen name="Plan" children={() => <PlaceholderScreen title="My Flight Plan" />} />
+      <Tab.Screen name="Plan" component={ScoreboardScreen} options={{ tabBarLabel: 'Scoreboard' }} />
       <Tab.Screen name="Resources" component={ResourcesScreen} />
       <Tab.Screen name="Settings" children={() => <PlaceholderScreen title="Settings" />} />
     </Tab.Navigator>

@@ -2,15 +2,12 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Detect if running on web
+// API Base URL — set EXPO_PUBLIC_API_URL in your local .env file.
+// See frontend/.env.example for instructions.
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000/api';
+
+// Detect if running on web (needed for storage helpers below)
 const isWeb = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
-
-// API Base URL (adjust LAN IP for mobile dev)
-const API_BASE_URL = __DEV__
-  ? (isWeb ? 'http://localhost:4000/api' : 'http://192.168.0.147:4000/api') // replace with your PC LAN IP
-  : 'https://your-production-backend-url.com/api';
-
-console.log('API_BASE_URL:', API_BASE_URL);
 
 // Storage helpers
 export const getStoredToken = async (): Promise<string | null> => {

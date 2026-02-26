@@ -1,14 +1,8 @@
 import { getStoredToken } from './authService';
 
-// Detect if running on web
-const isWeb = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
-
-// Use same URL pattern as authService
-const API_URL = __DEV__
-  ? (isWeb ? 'http://localhost:4000/api' : 'http://192.168.0.147:4000/api') // replace with your PC LAN IP
-  : 'https://your-production-backend-url.com/api';
-
-console.log('Resources API_URL:', API_URL);
+// API Base URL — set EXPO_PUBLIC_API_URL in your local .env file.
+// See frontend/.env.example for instructions.
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
 // Types
 export interface Resource {
