@@ -12,6 +12,13 @@ const UserSchema = new mongoose.Schema(
       required: true,
       default: "Student",
     },
+    // Faculty accounts must be reviewed by an admin.  Pending/denied users
+    // are not allowed to log in.
+    status: {
+      type: String,
+      enum: ["pending", "approved", "denied"],
+      default: "approved", // students and others are approved by default
+    },
 
     // ==================== STUDENT PROFILE FIELDS (Students only) ====================
     // These fields should ONLY exist for users with userType: "Student"
@@ -42,6 +49,10 @@ const UserSchema = new mongoose.Schema(
 
     // Interests
     careerInterests: [String],
+
+    // Contact & Professional Info
+    cin: String, // College-assigned ID number
+    linkedIn: String, // LinkedIn profile URL
 
     // ==================== SENSITIVE STUDENT DATA (Privacy Controlled) ====================
     // OSD (Disability Services) information - SENSITIVE DATA

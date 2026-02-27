@@ -144,6 +144,8 @@ export default function ProfileScreen() {
   const [credits, setCredits] = useState(
     user?.credits ? user.credits.toString() : ""
   );
+  const [cin, setCin] = useState(user?.cin || "");
+  const [linkedIn, setLinkedIn] = useState(user?.linkedIn || "");
 
   // Keep form in sync with user when user object changes (prefill)
   useEffect(() => {
@@ -157,6 +159,8 @@ export default function ProfileScreen() {
       setOsd(user.osd || []);
       setOsdPrivacy(user.osdPrivacy || "private");
       setCredits(user.credits ? user.credits.toString() : "");
+      setCin(user.cin || "");
+      setLinkedIn(user.linkedIn || "");
     }
   }, [user]);
 
@@ -180,6 +184,8 @@ export default function ProfileScreen() {
         osd,
         osdPrivacy,
         credits: credits ? parseInt(credits, 10) : 0,
+        cin,
+        linkedIn,
       };
 
       const result = await updateProfile(profileData);
@@ -211,6 +217,8 @@ export default function ProfileScreen() {
       setOsd(user.osd || []);
       setOsdPrivacy(user.osdPrivacy || "private");
       setCredits(user.credits ? user.credits.toString() : "");
+      setCin(user.cin || "");
+      setLinkedIn(user.linkedIn || "");
     }
   };
 
@@ -348,6 +356,24 @@ export default function ProfileScreen() {
           value={credits}
           onChangeText={setCredits}
           placeholder="Enter total credits"
+        />
+
+        {/* CIN */}
+        <Text style={styles.label}>College ID (CIN)</Text>
+        <TextInput
+          style={styles.input}
+          value={cin}
+          onChangeText={setCin}
+          placeholder="Enter your college ID number"
+        />
+
+        {/* LinkedIn */}
+        <Text style={styles.label}>LinkedIn Profile URL</Text>
+        <TextInput
+          style={styles.input}
+          value={linkedIn}
+          onChangeText={setLinkedIn}
+          placeholder="https://linkedin.com/in/yourprofile"
         />
 
         {/* Buttons */}

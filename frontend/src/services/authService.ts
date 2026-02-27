@@ -156,6 +156,43 @@ const authService = {
     }
   },
 
+  // ADMIN: fetch pending faculty accounts
+  getPendingFaculty: async () => {
+    try {
+      const response = await api.get('/auth/admin/pending-faculty');
+      return { success: true, pending: response.data.pending };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to fetch pending faculty',
+      };
+    }
+  },
+
+  approveFaculty: async (id: string) => {
+    try {
+      await api.put(`/auth/admin/faculty/${id}/approve`);
+      return { success: true };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Approve failed',
+      };
+    }
+  },
+
+  denyFaculty: async (id: string) => {
+    try {
+      await api.put(`/auth/admin/faculty/${id}/deny`);
+      return { success: true };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Deny failed',
+      };
+    }
+  },
+
   // Logout
   logout: async () => {
     await clearStoredToken();

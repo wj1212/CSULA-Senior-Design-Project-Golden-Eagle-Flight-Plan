@@ -16,6 +16,11 @@ const prepareUserResponse = (user) => {
     userType: userObj.userType,
   };
 
+  // If faculty, include approval status so client can display if needed
+  if (userObj.userType === "Faculty") {
+    response.status = userObj.status;
+  }
+
   // Only include profile fields for Students
   if (userObj.userType === "Student") {
     response.gradeLevel = userObj.gradeLevel;
@@ -26,6 +31,8 @@ const prepareUserResponse = (user) => {
     response.careerInterests = userObj.careerInterests;
     response.financialStatus = userObj.financialStatus;
     response.commuteStatus = userObj.commuteStatus;
+    response.cin = userObj.cin;
+    response.linkedIn = userObj.linkedIn;
     // Do NOT include OSD here - privacy controlled via separate endpoint
   }
 
@@ -57,11 +64,13 @@ router.post("/register", async (req, res) => {
       email,
       password: hashed,
       userType: registrationType,
+      // faculty accounts start pending until an admin approves them
+      status: registrationType === "Faculty" ? "pending" : undefined,
     };
 
     // Only set student profile fields for Student accounts
     if (registrationType === "Student") {
-      const studentFields = ["gradeLevel", "major", "degreeType", "gpa", "financialStatus", "commuteStatus", "credits", "careerInterests", "osd"];
+      const studentFields = ["gradeLevel", "major", "degreeType", "gpa", "financialStatus", "commuteStatus", "credits", "careerInterests", "osd", "cin", "linkedIn"];
       studentFields.forEach((field) => {
         if (field in profileData) {
           userData[field] = profileData[field];
@@ -76,7 +85,7 @@ router.post("/register", async (req, res) => {
     if (newUser.userType !== "Student") {
       newUser.careerInterests = undefined;
       newUser.osd = undefined;
-      newUser.osdPrivate = undefined;
+      newUser.osdPrivacy = undefined;
       newUser.gradeLevel = undefined;
       newUser.major = undefined;
       newUser.degreeType = undefined;
@@ -84,6 +93,8 @@ router.post("/register", async (req, res) => {
       newUser.financialStatus = undefined;
       newUser.commuteStatus = undefined;
       newUser.credits = undefined;
+      newUser.cin = undefined;
+      newUser.linkedIn = undefined;
     }
 
     await newUser.save();
@@ -116,6 +127,16 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // faculty approval flow: block pending/denied accounts
+    if (user.userType === "Faculty") {
+      if (user.status === "pending") {
+        return res.status(403).json({ message: "Account pending admin approval" });
+      }
+      if (user.status === "denied") {
+        return res.status(403).json({ message: "Account denied - contact administrator" });
+      }
     }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || "secret", {
@@ -195,6 +216,8 @@ router.put("/profile", authenticateToken, async (req, res) => {
         "commuteStatus",
         "osd",
         "osdPrivacy",
+        "cin",
+        "linkedIn",
       ];
       const hasStudentField = studentOnlyFields.some((field) => field in updates);
       if (hasStudentField) {
@@ -222,10 +245,70 @@ router.get("/verify", authenticateToken, async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+    // in case status changed after login (e.g. denied), block access
+    if (user.userType === "Faculty" && user.status !== "approved") {
+      return res.status(403).json({ error: "Faculty account not approved" });
+    }
     res.json({ success: true, user: prepareUserResponse(user) });
   } catch (error) {
     console.error("Verify error:", error);
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ---------------- ADMIN ROUTES ----------------
+
+// list all faculty accounts awaiting approval
+router.get("/admin/pending-faculty", authenticateToken, async (req, res) => {
+  if (req.user.userType !== "Admin") {
+    return res.status(403).json({ message: "Not authorized" });
+  }
+  try {
+    const pending = await User.find({ userType: "Faculty", status: "pending" }).select(
+      "-password -osd"
+    );
+    res.json({ pending });
+  } catch (err) {
+    console.error("Error fetching pending faculty:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// approve faculty account
+router.put("/admin/faculty/:id/approve", authenticateToken, async (req, res) => {
+  if (req.user.userType !== "Admin") {
+    return res.status(403).json({ message: "Not authorized" });
+  }
+  try {
+    const faculty = await User.findById(req.params.id);
+    if (!faculty || faculty.userType !== "Faculty") {
+      return res.status(404).json({ message: "User not found" });
+    }
+    faculty.status = "approved";
+    await faculty.save();
+    res.json({ message: "Faculty approved" });
+  } catch (err) {
+    console.error("Error approving faculty:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// deny faculty account
+router.put("/admin/faculty/:id/deny", authenticateToken, async (req, res) => {
+  if (req.user.userType !== "Admin") {
+    return res.status(403).json({ message: "Not authorized" });
+  }
+  try {
+    const faculty = await User.findById(req.params.id);
+    if (!faculty || faculty.userType !== "Faculty") {
+      return res.status(404).json({ message: "User not found" });
+    }
+    faculty.status = "denied";
+    await faculty.save();
+    res.json({ message: "Faculty denied" });
+  } catch (err) {
+    console.error("Error denying faculty:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

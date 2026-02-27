@@ -9,6 +9,7 @@ interface User {
   name?: string;
   email?: string;
   userType?: string;
+  status?: string; // for faculty approval status (pending/approved/denied)
   gradeLevel?: string;
   major?: string;
   degreeType?: string;
