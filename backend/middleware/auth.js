@@ -13,7 +13,8 @@ export const authenticateToken = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    // Exclude password and OSD by default for privacy
+    const user = await User.findById(decoded.userId).select('-password -osd');
     
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
@@ -34,3 +35,4 @@ export const authenticateToken = async (req, res, next) => {
 export const generateToken = (userId) => {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
 };
+

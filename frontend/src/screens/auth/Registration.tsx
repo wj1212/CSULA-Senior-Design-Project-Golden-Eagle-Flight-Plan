@@ -32,7 +32,7 @@ export default function Registration() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState<"student" | "faculty">("student");
+  const [role, setRole] = useState<"student" | "faculty" | "student-organization">("student");
   // Inline error states
   const [nameError, setNameError] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -88,13 +88,17 @@ export default function Registration() {
 
     setLoading(true);
     try {
-      // pass userType explicitly to backend
+      // Map role to userType
+      let userType = "Student";
+      if (role === "faculty") userType = "Faculty";
+      if (role === "student-organization") userType = "Student Organization";
+
       const result = await register({
         name: name.trim(),
         email: email.trim().toLowerCase(),
         password,
         confirmPassword,
-        userType: role === "faculty" ? "Faculty" : "Student",
+        userType,
       });
 
       if (result.success) {
@@ -266,6 +270,20 @@ export default function Registration() {
                 style={[styles.roleText, role === "faculty" && styles.roleTextActive]}
               >
                 Faculty
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.roleButton,
+                role === "student-organization" && styles.roleButtonActive,
+              ]}
+              onPress={() => setRole("student-organization")}
+            >
+              <Text
+                style={[styles.roleText, role === "student-organization" && styles.roleTextActive]}
+              >
+                Organization
               </Text>
             </TouchableOpacity>
           </View>

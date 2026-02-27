@@ -138,6 +138,9 @@ export default function ProfileScreen() {
     user?.careerInterests || []
   );
   const [osd, setOsd] = useState<string[]>(user?.osd || []);
+  const [osdPrivacy, setOsdPrivacy] = useState<string>(
+    user?.osdPrivacy || "private"
+  );
   const [credits, setCredits] = useState(
     user?.credits ? user.credits.toString() : ""
   );
@@ -152,6 +155,7 @@ export default function ProfileScreen() {
       setCommuteStatus(user.commuteStatus || COMMUTE_STATUSES[0]);
       setCareerInterests(user.careerInterests || []);
       setOsd(user.osd || []);
+      setOsdPrivacy(user.osdPrivacy || "private");
       setCredits(user.credits ? user.credits.toString() : "");
     }
   }, [user]);
@@ -174,6 +178,7 @@ export default function ProfileScreen() {
         commuteStatus,
         careerInterests,
         osd,
+        osdPrivacy,
         credits: credits ? parseInt(credits, 10) : 0,
       };
 
@@ -204,6 +209,7 @@ export default function ProfileScreen() {
       setCommuteStatus(user.commuteStatus || COMMUTE_STATUSES[0]);
       setCareerInterests(user.careerInterests || []);
       setOsd(user.osd || []);
+      setOsdPrivacy(user.osdPrivacy || "private");
       setCredits(user.credits ? user.credits.toString() : "");
     }
   };
@@ -315,6 +321,25 @@ export default function ProfileScreen() {
           })}
         </View>
 
+        {/* OSD Privacy */}
+        <View style={styles.privacySectionProfile}>
+          <View style={styles.privacyCheckboxRowProfile}>
+            <Checkbox
+              value={osdPrivacy === "private"}
+              onValueChange={(isPrivate) => setOsdPrivacy(isPrivate ? "private" : "public")}
+              color={osdPrivacy === "private" ? COLORS.primary : undefined}
+            />
+            <Text style={styles.privacyCheckboxLabelProfile}>
+              Keep OSD private
+            </Text>
+          </View>
+          <Text style={styles.privacyDescriptionProfile}>
+            {osdPrivacy === "private"
+              ? "✓ Your OSD information is private. Only you can see it."
+              : "Your OSD information will be visible to faculty members."}
+          </Text>
+        </View>
+
         {/* Credits */}
         <Text style={styles.label}>Credits Earned</Text>
         <TextInput
@@ -412,6 +437,33 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   checkboxLabel: { marginLeft: SPACING.sm, fontSize: 14, color: COLORS.text },
+  privacySectionProfile: {
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.md,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "#F0F4F8",
+    borderRadius: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+  },
+  privacyCheckboxRowProfile: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  privacyCheckboxLabelProfile: {
+    marginLeft: SPACING.sm,
+    fontSize: 14,
+    fontWeight: "500",
+    color: COLORS.text,
+  },
+  privacyDescriptionProfile: {
+    fontSize: 12,
+    color: "#666",
+    fontStyle: "italic",
+    marginTop: 6,
+  },
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
