@@ -15,6 +15,7 @@ import { SPACING } from '../constants/spacing';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import FacultyDashboard from '../screens/faculty/FacultyDashboard';
+import StudentProfileViewer from '../screens/faculty/StudentProfileViewer';
 import AdminDashboard from '../screens/admin/AdminDashboard';
 
 type NavParamList = {
@@ -26,6 +27,7 @@ type NavParamList = {
   Settings: undefined;
   Profile: undefined;
   FacultyDashboard: undefined;
+  StudentProfileViewer: undefined;
   AdminDashboard: undefined;
 };
 
@@ -37,12 +39,14 @@ export const BottomTabNavigator: React.FC = () => {
   const navigation = useNavigation();
 
   // Normalize userType if available
-  const userType = (user?.userType || user?.type || '').toString().toLowerCase() || 'student';
+  const rawType = (user?.userType || user?.type || '').toString();
+  const userType = rawType.toLowerCase() || 'student';
+  const isFacultyOrOrg = userType === 'faculty' || userType === 'student organization';
 
-  if (userType === 'faculty') {
+  if (isFacultyOrOrg) {
     return (
       <Tab.Navigator
-        screenOptions={{
+        screenOptions={({ navigation, route }) => ({
           headerTitle: () => (
             <Image
               source={require('../../../assets/logo-b.png')}
@@ -68,22 +72,63 @@ export const BottomTabNavigator: React.FC = () => {
               <Text style={styles.headerButtonPrimaryText}>Logout</Text>
             </TouchableOpacity>
           ),
-        }}
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName: keyof typeof Ionicons.glyphMap;
+            switch (route.name) {
+              case 'Home':
+                iconName = focused ? 'home' : 'home-outline';
+                break;
+              case 'StudentProfileViewer':
+                iconName = focused ? 'people' : 'people-outline';
+                break;
+              default:
+                iconName = 'help-outline';
+            }
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          headerStyle: {
+            backgroundColor: COLORS.headerBackground,
+            height: 70 + insets.top,
+          },
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            fontSize: 18,
+          },
+          tabBarStyle: {
+            backgroundColor: COLORS.headerBackground,
+            borderTopWidth: 0,
+            paddingTop: SPACING.xs,
+            height: 70 + insets.bottom,
+          },
+          tabBarActiveTintColor: COLORS.primary,
+          tabBarInactiveTintColor: COLORS.inactive,
+        })}
       >
-        <Tab.Screen name="Home" component={FacultyDashboard} options={{ title: 'Faculty' }} />
+        <Tab.Screen
+          name="Home"
+          component={FacultyDashboard}
+          options={{ title: rawType === 'Student Organization' ? 'Organization' : 'Faculty' }}
+        />
+        <Tab.Screen
+          name="StudentProfileViewer"
+          component={StudentProfileViewer}
+          options={{ title: 'Student View' }}
+        />
       </Tab.Navigator>
     );
   }
 
-  if (userType === 'admin') {
+  if (!isFacultyOrOrg && userType === 'admin') {
     return (
       <Tab.Navigator
-        screenOptions={{
+        screenOptions={({ navigation, route }) => ({
           headerTitle: () => (
-            <Image
-              source={require('../../../assets/logo-b.png')}
-              style={{ width: 160, height: 51, resizeMode: 'contain' }}
-            />
+            <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+              <Image
+                source={require('../../../assets/logo-b.png')}
+                style={{ width: 160, height: 51, resizeMode: 'contain' }}
+              />
+            </TouchableOpacity>
           ),
           headerTitleAlign: 'center',
           headerLeft: () => <View style={styles.placeholder} />,
@@ -103,7 +148,34 @@ export const BottomTabNavigator: React.FC = () => {
               <Text style={styles.headerButtonPrimaryText}>Logout</Text>
             </TouchableOpacity>
           ),
-        }}
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName: keyof typeof Ionicons.glyphMap;
+            switch (route.name) {
+              case 'Home':
+                iconName = focused ? 'settings' : 'settings-outline';
+                break;
+              default:
+                iconName = 'help-outline';
+            }
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          headerStyle: {
+            backgroundColor: COLORS.headerBackground,
+            height: 70 + insets.top,
+          },
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            fontSize: 18,
+          },
+          tabBarStyle: {
+            backgroundColor: COLORS.headerBackground,
+            borderTopWidth: 0,
+            paddingTop: SPACING.xs,
+            height: 70 + insets.bottom,
+          },
+          tabBarActiveTintColor: COLORS.primary,
+          tabBarInactiveTintColor: COLORS.inactive,
+        })}
       >
         <Tab.Screen name="Home" component={AdminDashboard} options={{ title: 'Admin' }} />
       </Tab.Navigator>

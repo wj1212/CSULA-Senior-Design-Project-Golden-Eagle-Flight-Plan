@@ -7,12 +7,12 @@ const router = express.Router();
 
 // ==================== FACULTY ROUTES ====================
 
-// Create a new resource (Faculty only)
+// Create a new resource (Faculty & Student Organization)
 router.post("/resources", authenticateToken, async (req, res) => {
   try {
-    // Check if user is faculty
-    if (req.user.userType !== "Faculty") {
-      return res.status(403).json({ message: "Only faculty can create resources" });
+    // Check if user is faculty or organization
+    if (req.user.userType !== "Faculty" && req.user.userType !== "Student Organization") {
+      return res.status(403).json({ message: "Only faculty or student organizations can create resources" });
     }
 
     const { title, url, description, hashtags } = req.body;
@@ -38,12 +38,12 @@ router.post("/resources", authenticateToken, async (req, res) => {
   }
 });
 
-// Create a new event (Faculty only)
+// Create a new event (Faculty & Student Organization)
 router.post("/events", authenticateToken, async (req, res) => {
   try {
-    // Check if user is faculty
-    if (req.user.userType !== "Faculty") {
-      return res.status(403).json({ message: "Only faculty can create events" });
+    // Check if user is faculty or organization
+    if (req.user.userType !== "Faculty" && req.user.userType !== "Student Organization") {
+      return res.status(403).json({ message: "Only faculty or student organizations can create events" });
     }
 
     const { title, date, location, description, hashtags } = req.body;
@@ -70,11 +70,11 @@ router.post("/events", authenticateToken, async (req, res) => {
   }
 });
 
-// Update a resource (Faculty only - own resources)
+// Update a resource (Faculty & Student Organization - own resources)
 router.put("/resources/:id", authenticateToken, async (req, res) => {
   try {
-    if (req.user.userType !== "Faculty") {
-      return res.status(403).json({ message: "Only faculty can update resources" });
+    if (req.user.userType !== "Faculty" && req.user.userType !== "Student Organization") {
+      return res.status(403).json({ message: "Only faculty or student organizations can update resources" });
     }
 
     const resource = await Resource.findById(req.params.id);
@@ -106,11 +106,11 @@ router.put("/resources/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// Delete a resource (Faculty only - own resources)
+// Delete a resource (Faculty & Student Organization - own resources)
 router.delete("/resources/:id", authenticateToken, async (req, res) => {
   try {
-    if (req.user.userType !== "Faculty") {
-      return res.status(403).json({ message: "Only faculty can delete resources" });
+    if (req.user.userType !== "Faculty" && req.user.userType !== "Student Organization") {
+      return res.status(403).json({ message: "Only faculty or student organizations can delete resources" });
     }
 
     const resource = await Resource.findById(req.params.id);
@@ -131,11 +131,11 @@ router.delete("/resources/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// Update an event (Faculty only - own events)
+// Update an event (Faculty & Student Organization - own events)
 router.put("/events/:id", authenticateToken, async (req, res) => {
   try {
-    if (req.user.userType !== "Faculty") {
-      return res.status(403).json({ message: "Only faculty can update events" });
+    if (req.user.userType !== "Faculty" && req.user.userType !== "Student Organization") {
+      return res.status(403).json({ message: "Only faculty or student organizations can update events" });
     }
 
     const event = await Event.findById(req.params.id);
@@ -168,11 +168,11 @@ router.put("/events/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// Delete an event (Faculty only - own events)
+// Delete an event (Faculty & Student Organization - own events)
 router.delete("/events/:id", authenticateToken, async (req, res) => {
   try {
-    if (req.user.userType !== "Faculty") {
-      return res.status(403).json({ message: "Only faculty can delete events" });
+    if (req.user.userType !== "Faculty" && req.user.userType !== "Student Organization") {
+      return res.status(403).json({ message: "Only faculty or student organizations can delete events" });
     }
 
     const event = await Event.findById(req.params.id);

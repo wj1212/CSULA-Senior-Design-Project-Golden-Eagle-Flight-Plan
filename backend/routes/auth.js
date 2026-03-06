@@ -312,4 +312,92 @@ router.put("/admin/faculty/:id/deny", authenticateToken, async (req, res) => {
   }
 });
 
+// SEARCH STUDENTS (Faculty only)
+router.get("/search-students", authenticateToken, async (req, res) => {
+  try {
+    // Only faculty can search students
+    if (req.user.userType !== "Faculty") {
+      console.log("Search denied: user is not faculty", req.user.userType);
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { q } = req.query;
+    if (!q || q.trim().length < 2) {
+      return res.status(400).json({ message: "Search query must be at least 2 characters" });
+    }
+
+    console.log("Searching students for query:", q);
+
+    // Search by name or CIN (case-insensitive)
+    const students = await User.find({
+      userType: "Student",
+      $or: [
+        { name: { $regex: q.trim(), $options: "i" } },
+        { cin: { $regex: q.trim(), $options: "i" } }
+      ]
+    }).select("_id name cin email gradeLevel major degreeType gpa credits careerInterests financialStatus commuteStatus linkedIn");
+
+    console.log("Found students:", students.length);
+    
+    // Map to include both _id and id
+    const mappedStudents = students.map(student => ({
+      _id: student._id,
+      id: student._id.toString(),
+      name: student.name,
+      cin: student.cin,
+      email: student.email,
+      gradeLevel: student.gradeLevel,
+      major: student.major,
+      degreeType: student.degreeType,
+      gpa: student.gpa,
+      credits: student.credits,
+      careerInterests: student.careerInterests,
+      financialStatus: student.financialStatus,
+      commuteStatus: student.commuteStatus,
+      linkedIn: student.linkedIn
+    }));
+
+    res.json({ students: mappedStudents });
+  } catch (err) {
+    console.error("Error searching students:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// GET STUDENT DETAILS (Faculty only)
+router.get("/student/:id", authenticateToken, async (req, res) => {
+  try {
+    // Only faculty can view student details
+    if (req.user.userType !== "Faculty") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    console.log("Fetching student details for ID:", req.params.id);
+
+    const student = await User.findById(req.params.id).select("+osd");
+    if (!student || student.userType !== "Student") {
+      console.log("Student not found or not a student");
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    // Prepare response with all student data
+    const response = prepareUserResponse(student);
+    
+    // Add _id and id explicitly
+    response._id = student._id;
+    response.id = student._id.toString();
+    
+    // Include OSD if privacy allows
+    if (student.osdPrivacy === "public") {
+      response.osd = student.osd;
+    }
+
+    console.log("Returning student details");
+    res.json({ student: response });
+  } catch (err) {
+    console.error("Error getting student details:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 export default router;

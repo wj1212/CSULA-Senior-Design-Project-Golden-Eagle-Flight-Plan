@@ -193,6 +193,32 @@ const authService = {
     }
   },
 
+  // Search students (Faculty only)
+  searchStudents: async (query: string) => {
+    try {
+      const response = await api.get('/auth/search-students', { params: { q: query } });
+      return { success: true, students: response.data.students };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Search failed',
+      };
+    }
+  },
+
+  // Get student details (Faculty only)
+  getStudentDetails: async (id: string) => {
+    try {
+      const response = await api.get(`/auth/student/${id}`);
+      return { success: true, student: response.data.student };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to get student details',
+      };
+    }
+  },
+
   // Logout
   logout: async () => {
     await clearStoredToken();

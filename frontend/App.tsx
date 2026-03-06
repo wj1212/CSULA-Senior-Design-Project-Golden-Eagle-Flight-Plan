@@ -58,7 +58,7 @@ function AppNavigator() {
   const getInitialRoute = () => {
     if (!user) return 'Login';
     const userType = (user as any).userType;
-    if (userType === 'Faculty') return 'FacultyDashboard';
+    if (userType === 'Faculty' || userType === 'Student Organization') return 'FacultyDashboard';
     if (userType === 'Admin') return 'AdminDashboard';
     return 'Main';
   };
@@ -76,7 +76,11 @@ function AppNavigator() {
         <Stack.Screen name="Main" component={BottomTabNavigator} options={{ headerShown: false }} />
 
         {/* Faculty / Admin dashboards */}
-        <Stack.Screen name="FacultyDashboard" component={FacultyDashboard} options={{ title: 'Faculty Dashboard' }} />
+        <Stack.Screen
+          name="FacultyDashboard"
+          component={FacultyDashboard}
+          options={{ title: user?.userType === 'Student Organization' ? 'Organization Dashboard' : 'Faculty Dashboard' }}
+        />
         <Stack.Screen name="AdminDashboard" component={AdminDashboard} options={{ title: 'Admin Dashboard' }} />
 
         {/* Student Profile */}

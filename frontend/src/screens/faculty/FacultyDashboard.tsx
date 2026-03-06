@@ -4,11 +4,15 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert,
 import { COLORS } from '../../constants/colors';
 import { SPACING } from '../../constants/spacing';
 import * as resourceService from '../../services/resourceService';
+import { useAuth } from '../../contexts/AuthContext';
 
 type Resource = resourceService.Resource;
 type EventItem = resourceService.Event;
 
 const FacultyDashboard: React.FC = () => {
+  const { user } = useAuth();
+  const isOrg = user?.userType === 'Student Organization';
+
   const [s, set] = useState({
     resources: [] as Resource[],
     resource: { title: '', url: '', description: '', hashtags: '' },
@@ -385,7 +389,7 @@ const FacultyDashboard: React.FC = () => {
       contentContainerStyle={styles.content}
     >
       <Text style={{ color: COLORS.text, fontSize: 24, fontWeight: '700', textAlign: 'center' }}>
-        Faculty Dashboard
+        {isOrg ? 'Organization Dashboard' : 'Faculty Dashboard'}
       </Text>
       <Text
         style={{
