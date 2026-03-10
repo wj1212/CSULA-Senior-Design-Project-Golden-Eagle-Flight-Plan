@@ -12,7 +12,6 @@ export type ThemeColors = {
   buttonPrimaryBackground: string;
   buttonPrimaryText: string;
 
-
   inactive: string;
   border: string;
 
@@ -20,7 +19,14 @@ export type ThemeColors = {
   surface: string;
   card: string;
   inputBg: string;
-  onPrimary: string; 
+  onPrimary: string;
+  
+  placeholder: string;
+  danger: string;
+  success: string;
+  lightGray: string;
+  lightPrimary: string;
+  secondaryText: string;
 };
 
 export const COLORS: ThemeColors = {
@@ -46,4 +52,11 @@ export const COLORS: ThemeColors = {
   card: '#FFFFFF',
   inputBg: '#FFFFFF',
   onPrimary: '#000000',
+  
+  placeholder: '#999999',
+  danger: '#EF4444',
+  success: '#22C55E',
+  lightGray: '#F3F4F6',
+  lightPrimary: '#FEF3C7',
+  secondaryText: '#6B7280',
 };

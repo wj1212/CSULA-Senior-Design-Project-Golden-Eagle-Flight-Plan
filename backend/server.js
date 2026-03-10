@@ -6,6 +6,7 @@ import connectDB from "./db.js";
 import authRoutes from "./routes/auth.js";
 import resourceRoutes from "./routes/resources.js";
 import scoreboardRoutes from "./routes/scoreboard.js";
+import profileConfigRoutes from "./routes/profileConfig.js";
 import ScoreboardTask from "./models/ScoreboardTask.js";
 import { allTasks } from "./seed/scoreboardData.js";
 
@@ -34,6 +35,7 @@ app.use(bodyParser.json());
 // routes
 app.use("/api/auth", authRoutes);
 app.use("/api/scoreboard", scoreboardRoutes);
+app.use("/api/profile-config", profileConfigRoutes);
 app.use("/api", resourceRoutes);
 
 app.get("/", (req, res) => {

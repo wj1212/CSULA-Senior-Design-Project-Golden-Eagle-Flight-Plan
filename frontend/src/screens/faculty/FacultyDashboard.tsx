@@ -1,16 +1,22 @@
 // src/screens/faculty/FacultyDashboard.tsx
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform, Modal } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { COLORS } from '../../constants/colors';
 import { SPACING } from '../../constants/spacing';
 import * as resourceService from '../../services/resourceService';
 import { useAuth } from '../../contexts/AuthContext';
+import { RootStackParamList } from '../../../App';
+
+type NavProp = NativeStackNavigationProp<RootStackParamList, 'FacultyDashboard'>;
 
 type Resource = resourceService.Resource;
 type EventItem = resourceService.Event;
 
 const FacultyDashboard: React.FC = () => {
   const { user } = useAuth();
+  const navigation = useNavigation<NavProp>();
   const isOrg = user?.userType === 'Student Organization';
 
   const [s, set] = useState({
@@ -401,6 +407,19 @@ const FacultyDashboard: React.FC = () => {
       >
         Add resources and events with hashtags for students to browse.
       </Text>
+
+      {/* PROFILE CONFIGURATION SECTION */}
+      {user?.userType === 'Faculty' || user?.userType === 'Admin' ? (
+        <Section title="Student Profile Configuration">
+          <Text style={styles.helpText}>
+            Manage available options for student profiles (majors, OSD options, financial statuses, etc.).
+          </Text>
+          <Button 
+            label="Manage Profile Options" 
+            onPress={() => navigation.navigate('ProfileConfiguration')}
+          />
+        </Section>
+      ) : null}
 
       {/* RESOURCES SECTION */}
       <Section title="Add Resource">

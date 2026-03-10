@@ -18,6 +18,7 @@ import { RootStackParamList } from "../../../App";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { COLORS } from "../../constants/colors";
 import { SPACING } from "../../constants/spacing";
+import profileConfigService, { type ProfileConfig } from "../../services/profileConfigService";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Profile">;
 
@@ -122,6 +123,8 @@ export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
   const { user, updateProfile, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [configLoading, setConfigLoading] = useState(true);
+  const [config, setConfig] = useState<ProfileConfig | null>(null);
 
   // profile data (local form state)
   const [major, setMajor] = useState(user?.major || "");
@@ -147,14 +150,35 @@ export default function ProfileScreen() {
   const [cin, setCin] = useState(user?.cin || "");
   const [linkedIn, setLinkedIn] = useState(user?.linkedIn || "");
 
+  // Load profile configuration on mount
+  useEffect(() => {
+    loadProfileConfig();
+  }, []);
+
+  const loadProfileConfig = async () => {
+    setConfigLoading(true);
+    try {
+      const result = await profileConfigService.getConfig();
+      if (result.success || result.config) {
+        setConfig(result.config);
+      } else {
+        console.warn("Failed to load profile config, using defaults");
+      }
+    } catch (error) {
+      console.error("Error loading profile config:", error);
+    } finally {
+      setConfigLoading(false);
+    }
+  };
+
   // Keep form in sync with user when user object changes (prefill)
   useEffect(() => {
     if (user) {
       setMajor(user.major || "");
       setGpa(user.gpa !== undefined ? user.gpa.toString() : "");
-      setFinancialStatus(user.financialStatus || FINANCIAL_STATUSES[0]);
-      setGradeLevel(user.gradeLevel || "Freshman");
-      setCommuteStatus(user.commuteStatus || COMMUTE_STATUSES[0]);
+      setFinancialStatus(user.financialStatus || (config?.financialStatuses?.[0] || FINANCIAL_STATUSES[0]));
+      setGradeLevel(user.gradeLevel || (config?.gradeLevels?.[0] || "Freshman"));
+      setCommuteStatus(user.commuteStatus || (config?.commuteStatuses?.[0] || COMMUTE_STATUSES[0]));
       setCareerInterests(user.careerInterests || []);
       setOsd(user.osd || []);
       setOsdPrivacy(user.osdPrivacy || "private");
@@ -162,13 +186,21 @@ export default function ProfileScreen() {
       setCin(user.cin || "");
       setLinkedIn(user.linkedIn || "");
     }
-  }, [user]);
+  }, [user, config]);
 
   const toggleMulti = (setter: any, state: string[], value: string) => {
     setter(
       state.includes(value) ? state.filter((v) => v !== value) : [...state, value]
     );
   };
+
+  // Get effective values (from config if loaded, otherwise use defaults)
+  const effectiveMajors = config?.majors || MAJORS;
+  const effectiveFinancialStatuses = config?.financialStatuses || FINANCIAL_STATUSES;
+  const effectiveGradeLevels = config?.gradeLevels || GRADE_LEVELS;
+  const effectiveCommuteStatuses = config?.commuteStatuses || COMMUTE_STATUSES;
+  const effectiveOsdOptions = config?.osdOptions || OSD_OPTIONS;
+  const effectiveCareerInterests = config?.careerInterests || CAREER_INTEREST_MAP;
 
   const handleSave = async () => {
     setLoading(true);
@@ -222,8 +254,21 @@ export default function ProfileScreen() {
     }
   };
 
-  const availableCareerInterests =
-    CAREER_INTEREST_MAP[major] || CAREER_INTEREST_MAP.default;
+  // Safe career interests lookup with fallback
+  const getAvailableCareerInterests = (): string[] => {
+    if (!effectiveCareerInterests || !major) {
+      return CAREER_INTEREST_MAP['default'] || [];
+    }
+    
+    const majorInterests = effectiveCareerInterests[major];
+    if (majorInterests && Array.isArray(majorInterests) && majorInterests.length > 0) {
+      return majorInterests;
+    }
+    
+    return CAREER_INTEREST_MAP['default'] || [];
+  };
+
+  const availableCareerInterests = getAvailableCareerInterests();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -234,7 +279,7 @@ export default function ProfileScreen() {
         <Text style={styles.label}>Major</Text>
         <Dropdown
           style={styles.dropdown}
-          data={MAJORS.map((m) => ({ label: m, value: m }))}
+          data={effectiveMajors.map((m) => ({ label: m, value: m }))}
           labelField="label"
           valueField="value"
           value={major}
@@ -256,7 +301,7 @@ export default function ProfileScreen() {
         <Text style={styles.label}>Academic Level</Text>
         <Dropdown
           style={styles.dropdown}
-          data={GRADE_LEVELS.map((a) => ({ label: a, value: a }))}
+          data={effectiveGradeLevels.map((a) => ({ label: a, value: a }))}
           labelField="label"
           valueField="value"
           value={gradeLevel}
@@ -268,7 +313,7 @@ export default function ProfileScreen() {
         <Text style={styles.label}>Financial Status</Text>
         <Dropdown
           style={styles.dropdown}
-          data={FINANCIAL_STATUSES.map((f) => ({ label: f, value: f }))}
+          data={effectiveFinancialStatuses.map((f) => ({ label: f, value: f }))}
           labelField="label"
           valueField="value"
           value={financialStatus}
@@ -280,7 +325,7 @@ export default function ProfileScreen() {
         <Text style={styles.label}>Commute Status</Text>
         <Dropdown
           style={styles.dropdown}
-          data={COMMUTE_STATUSES.map((c) => ({ label: c, value: c }))}
+          data={effectiveCommuteStatuses.map((c) => ({ label: c, value: c }))}
           labelField="label"
           valueField="value"
           value={commuteStatus}
@@ -314,7 +359,7 @@ export default function ProfileScreen() {
         {/* OSD */}
         <Text style={styles.label}>Accessibility / OSD</Text>
         <View style={styles.checkboxRow}>
-          {OSD_OPTIONS.map((item) => {
+          {effectiveOsdOptions.map((item) => {
             const checked = osd.includes(item);
             return (
               <View key={item} style={styles.checkboxContainer}>

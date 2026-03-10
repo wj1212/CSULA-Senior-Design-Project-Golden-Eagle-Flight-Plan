@@ -14,6 +14,7 @@ import { BottomTabNavigator } from './src/navigation/BottomTabNavigator';
 import ProfileScreen from './src/screens/student/ProfileScreen';
 
 import FacultyDashboard from './src/screens/faculty/FacultyDashboard';
+import ProfileConfigurationPage from './src/screens/faculty/ProfileConfigurationPage';
 import AdminDashboard from './src/screens/admin/AdminDashboard';
 
 export type RootStackParamList = {
@@ -22,6 +23,7 @@ export type RootStackParamList = {
   Register: undefined;
   Main: undefined;
   FacultyDashboard: undefined;
+  ProfileConfiguration: undefined;
   AdminDashboard: undefined;
   Profile: undefined;
 };
@@ -80,6 +82,11 @@ function AppNavigator() {
           name="FacultyDashboard"
           component={FacultyDashboard}
           options={{ title: user?.userType === 'Student Organization' ? 'Organization Dashboard' : 'Faculty Dashboard' }}
+        />
+        <Stack.Screen
+          name="ProfileConfiguration"
+          component={ProfileConfigurationPage}
+          options={{ title: 'Student Profile Configuration', headerShown: true }}
         />
         <Stack.Screen name="AdminDashboard" component={AdminDashboard} options={{ title: 'Admin Dashboard' }} />
 
