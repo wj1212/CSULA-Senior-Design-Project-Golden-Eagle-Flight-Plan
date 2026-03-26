@@ -159,6 +159,7 @@ export default function ProfileScreen() {
     setConfigLoading(true);
     try {
       const result = await profileConfigService.getConfig();
+      
       if (result.success || result.config) {
         setConfig(result.config);
       } else {

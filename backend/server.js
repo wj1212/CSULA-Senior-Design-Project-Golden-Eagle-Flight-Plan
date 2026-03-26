@@ -8,6 +8,7 @@ import resourceRoutes from "./routes/resources.js";
 import scoreboardRoutes from "./routes/scoreboard.js";
 import profileConfigRoutes from "./routes/profileConfig.js";
 import ScoreboardTask from "./models/ScoreboardTask.js";
+import majorCurriculumRoutes  from "./routes/majorCurriculum.js";
 import { allTasks } from "./seed/scoreboardData.js";
 
 dotenv.config();
@@ -37,6 +38,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/scoreboard", scoreboardRoutes);
 app.use("/api/profile-config", profileConfigRoutes);
 app.use("/api", resourceRoutes);
+
+app.use("/api/curriculum", majorCurriculumRoutes)
 
 app.get("/", (req, res) => {
   res.send("Backend is running");
