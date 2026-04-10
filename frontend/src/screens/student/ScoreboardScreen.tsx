@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,37 +18,47 @@ import { SPACING } from '../../constants/spacing';
 import scoreboardService from '../../services/scoreboardService';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000/api';
-import { ScoreboardProgress, ScoreboardTask, ScoreboardCategory } from '../../types';
+import { ScoreboardProgress, ScoreboardTask, ScoreboardCategory, TierStatus, EligibleEvent } from '../../types';
 
 // ─── Category display config ──────────────────────────────────────────────────
 
 const CATEGORY_LABEL: Record<ScoreboardCategory, string> = {
   ACADEMIC_PROGRESS: 'Academic',
   CAREER_PREP: 'Career',
-  PROFESSIONAL_SKILLS: 'Skills',
   COMMUNITY_LEADERSHIP: 'Community',
 };
 
 const CATEGORY_COLOR: Record<ScoreboardCategory, string> = {
   ACADEMIC_PROGRESS: '#552583',
   CAREER_PREP: '#ca8a04',
-  PROFESSIONAL_SKILLS: '#1e40af',
   COMMUNITY_LEADERSHIP: '#16a34a',
 };
 
 const CATEGORY_ICON: Record<ScoreboardCategory, keyof typeof Ionicons.glyphMap> = {
   ACADEMIC_PROGRESS: 'school-outline',
   CAREER_PREP: 'briefcase-outline',
-  PROFESSIONAL_SKILLS: 'construct-outline',
   COMMUNITY_LEADERSHIP: 'people-outline',
 };
 
 const ALL_CATEGORIES: ScoreboardCategory[] = [
   'ACADEMIC_PROGRESS',
   'CAREER_PREP',
-  'PROFESSIONAL_SKILLS',
   'COMMUNITY_LEADERSHIP',
 ];
+
+const YEAR_LABELS: Record<1 | 2 | 3 | 4, string> = {
+  1: 'Baby Eagle',
+  2: 'Fledgling Eagle',
+  3: 'Soaring Eagle',
+  4: 'Golden Eagle',
+};
+
+const YEAR_UNLOCK_LEVEL: Record<1 | 2 | 3 | 4, number> = {
+  1: 0,
+  2: 4,
+  3: 6,
+  4: 8,
+};
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -241,7 +253,7 @@ const catStyles = StyleSheet.create({
   },
   chip: {
     flex: 1,
-    minWidth: '45%',
+    minWidth: '30%',
     backgroundColor: COLORS.white,
     borderRadius: 10,
     borderWidth: 1.5,
@@ -600,7 +612,9 @@ const YearSection: React.FC<YearSectionProps> = ({
     <View style={yearStyles.section}>
       <TouchableOpacity style={yearStyles.header} onPress={onToggle} activeOpacity={0.7}>
         <View style={yearStyles.headerLeft}>
-          <Text style={yearStyles.yearLabel}>Year {year}</Text>
+          <Text style={yearStyles.yearLabel}>
+            {YEAR_LABELS[year as 1 | 2 | 3 | 4] ?? `Year ${year}`}
+          </Text>
           {badge?.earned && (
             <Ionicons name="trophy" size={14} color={COLORS.primary} style={{ marginLeft: 6 }} />
           )}
@@ -684,6 +698,53 @@ const yearStyles = StyleSheet.create({
   },
 });
 
+// ─── Locked tier teaser ───────────────────────────────────────────────────────
+
+const LockedTierTeaser: React.FC<{ tier: TierStatus }> = ({ tier }) => (
+  <View style={lockedStyles.container}>
+    <Ionicons name="lock-closed" size={20} color={COLORS.muted} />
+    <View style={lockedStyles.textBlock}>
+      <Text style={lockedStyles.title}>
+        {YEAR_LABELS[tier.year] ?? `Year ${tier.year}`}
+      </Text>
+      <Text style={lockedStyles.hint}>Reach Level {tier.requiredLevel} to unlock</Text>
+    </View>
+  </View>
+);
+
+const lockedStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: SPACING.lg,
+    marginBottom: SPACING.sm,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    opacity: 0.65,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  textBlock: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.muted,
+  },
+  hint: {
+    fontSize: 12,
+    color: COLORS.muted,
+    marginTop: 2,
+  },
+});
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export const ScoreboardScreen: React.FC = () => {
@@ -696,6 +757,12 @@ export const ScoreboardScreen: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Event picker modal state
+  const [eventPickerVisible, setEventPickerVisible] = useState(false);
+  const [eventPickerTask, setEventPickerTask] = useState<ScoreboardTask | null>(null);
+  const [eligibleEvents, setEligibleEvents] = useState<EligibleEvent[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
     if (toastTimeout.current) clearTimeout(toastTimeout.current);
@@ -747,8 +814,48 @@ export const ScoreboardScreen: React.FC = () => {
     }
   }, [undoingTaskId, loadProgress, showToast]);
 
+  const openEventPicker = useCallback(async (task: ScoreboardTask) => {
+    setEventPickerTask(task);
+    setEventPickerVisible(true);
+    setLoadingEvents(true);
+    const result = await scoreboardService.getEligibleEvents(task._id);
+    if (result.success && result.events) {
+      setEligibleEvents(result.events);
+    } else {
+      setEligibleEvents([]);
+    }
+    setLoadingEvents(false);
+  }, []);
+
+  const completeWithEvent = useCallback(async (task: ScoreboardTask, eventId: string) => {
+    setEventPickerVisible(false);
+    setCompletingTaskId(task._id);
+
+    const result = await scoreboardService.completeTask(task._id, eventId);
+    setCompletingTaskId(null);
+
+    if (result.success && result.data) {
+      const { pointsAwarded, cappedAtStanding, capReason } = result.data.completion;
+      if (cappedAtStanding) {
+        showToast(capReason || 'Standing cap reached — task recorded with 0 pts.', 'info');
+      } else {
+        showToast(`+${pointsAwarded} pts — "${task.title}" complete!`, 'success');
+      }
+      await loadProgress();
+    } else {
+      showToast(result.error ?? 'Could not complete task', 'error');
+    }
+  }, [loadProgress, showToast]);
+
   const handleComplete = useCallback(async (task: ScoreboardTask) => {
     if (completingTaskId) return; // prevent double-tap
+
+    // If the task requires event attendance, open the picker instead
+    if (task.requiresEvent) {
+      openEventPicker(task);
+      return;
+    }
+
     setCompletingTaskId(task._id);
 
     const result = await scoreboardService.completeTask(task._id);
@@ -765,7 +872,7 @@ export const ScoreboardScreen: React.FC = () => {
     } else {
       showToast(result.error ?? 'Could not complete task', 'error');
     }
-  }, [completingTaskId, loadProgress, showToast]);
+  }, [completingTaskId, loadProgress, showToast, openEventPicker]);
 
   if (loading) {
     return (
@@ -798,10 +905,6 @@ export const ScoreboardScreen: React.FC = () => {
       </SafeAreaView>
     );
   }
-
-  const years = Object.keys(progress.tasksByYear)
-    .map(Number)
-    .sort((a, b) => a - b);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -843,16 +946,19 @@ export const ScoreboardScreen: React.FC = () => {
 
         {/* Year accordion */}
         <Text style={styles.sectionTitle}>Milestone Tasks</Text>
-        {years.map((year) => {
-          const badge = progress.badges.find((b) => b.year === year);
+        {(progress.tierStatus ?? []).map((tier) => {
+          if (!tier.unlocked) {
+            return <LockedTierTeaser key={tier.year} tier={tier} />;
+          }
+          const badge = progress.badges.find((b) => b.year === tier.year);
           return (
             <YearSection
-              key={year}
-              year={year}
-              tasks={progress.tasksByYear[String(year)]}
+              key={tier.year}
+              year={tier.year}
+              tasks={progress.tasksByYear[String(tier.year)] ?? []}
               badge={badge}
-              expanded={expandedYears.has(year)}
-              onToggle={() => toggleYear(year)}
+              expanded={expandedYears.has(tier.year)}
+              onToggle={() => toggleYear(tier.year)}
               completingTaskId={completingTaskId}
               onComplete={handleComplete}
               undoingTaskId={undoingTaskId}
@@ -863,6 +969,74 @@ export const ScoreboardScreen: React.FC = () => {
 
         <View style={styles.bottomPad} />
       </ScrollView>
+
+      {/* Event picker modal */}
+      <Modal
+        visible={eventPickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEventPickerVisible(false)}
+      >
+        <View style={pickerStyles.overlay}>
+          <View style={pickerStyles.sheet}>
+            <View style={pickerStyles.header}>
+              <Text style={pickerStyles.title}>Select an Event</Text>
+              <TouchableOpacity onPress={() => setEventPickerVisible(false)}>
+                <Ionicons name="close" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+
+            {eventPickerTask && (
+              <Text style={pickerStyles.taskHint}>
+                For: {eventPickerTask.title}
+              </Text>
+            )}
+
+            {loadingEvents ? (
+              <View style={pickerStyles.center}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+                <Text style={pickerStyles.loadingText}>Loading events...</Text>
+              </View>
+            ) : eligibleEvents.length === 0 ? (
+              <View style={pickerStyles.center}>
+                <Ionicons name="calendar-outline" size={48} color={COLORS.border} />
+                <Text style={pickerStyles.emptyTitle}>No Eligible Events</Text>
+                <Text style={pickerStyles.emptyMessage}>
+                  You haven't RSVP'd to any matching events yet.{'\n'}Check the Resources tab for upcoming events.
+                </Text>
+              </View>
+            ) : (
+              <FlatList
+                data={eligibleEvents}
+                keyExtractor={(item) => item._id}
+                contentContainerStyle={pickerStyles.list}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={pickerStyles.eventCard}
+                    onPress={() => eventPickerTask && completeWithEvent(eventPickerTask, item._id)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={pickerStyles.eventInfo}>
+                      <Text style={pickerStyles.eventTitle}>{item.title}</Text>
+                      <View style={pickerStyles.eventMeta}>
+                        <Ionicons name="calendar-outline" size={14} color={COLORS.muted} />
+                        <Text style={pickerStyles.eventDate}>{item.date}</Text>
+                      </View>
+                      {item.location && (
+                        <View style={pickerStyles.eventMeta}>
+                          <Ionicons name="location-outline" size={14} color={COLORS.muted} />
+                          <Text style={pickerStyles.eventDate}>{item.location}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={COLORS.muted} />
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -968,5 +1142,96 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     lineHeight: 18,
+  },
+});
+
+const pickerStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
+    paddingBottom: SPACING.xxl,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.sm,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  taskHint: {
+    fontSize: 13,
+    color: COLORS.muted,
+    paddingHorizontal: SPACING.xl,
+    marginBottom: SPACING.md,
+  },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.xxxl,
+    paddingHorizontal: SPACING.xl,
+  },
+  loadingText: {
+    color: COLORS.muted,
+    marginTop: SPACING.sm,
+    fontSize: 14,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginTop: SPACING.md,
+  },
+  emptyMessage: {
+    fontSize: 13,
+    color: COLORS.muted,
+    textAlign: 'center',
+    marginTop: SPACING.sm,
+    lineHeight: 20,
+  },
+  list: {
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.md,
+  },
+  eventCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  eventInfo: {
+    flex: 1,
+  },
+  eventTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  eventMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  eventDate: {
+    fontSize: 12,
+    color: COLORS.muted,
   },
 });

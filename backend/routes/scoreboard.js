@@ -1,11 +1,13 @@
 import express from "express";
 import ScoreboardTask from "../models/ScoreboardTask.js";
 import TaskCompletion from "../models/TaskCompletion.js";
+import Event from "../models/Event.js";
 import { authenticateToken } from "../middleware/auth.js";
 import {
   computeLevel,
   computeBadges,
   STANDING_CAPS,
+  YEAR_UNLOCK_LEVEL,
 } from "../utils/levelCalculator.js";
 
 const router = express.Router();
@@ -22,16 +24,14 @@ function aggregatePoints(completions) {
   const pointsByCategory = {
     ACADEMIC_PROGRESS: 0,
     CAREER_PREP: 0,
-    PROFESSIONAL_SKILLS: 0,
     COMMUNITY_LEADERSHIP: 0,
   };
 
   for (const comp of completions) {
+    if (!comp.task) continue; // skip orphaned completions (task was deleted)
     totalPoints += comp.pointsAwarded;
-    if (comp.task) {
-      pointsByCategory[comp.task.category] =
-        (pointsByCategory[comp.task.category] || 0) + comp.pointsAwarded;
-    }
+    pointsByCategory[comp.task.category] =
+      (pointsByCategory[comp.task.category] || 0) + comp.pointsAwarded;
   }
 
   return { totalPoints, pointsByCategory };
@@ -105,16 +105,28 @@ router.get("/me", authenticateToken, async (req, res) => {
     // 6. Compute badges
     const badges = computeBadges(allActiveTasks, completedTaskIds);
 
-    // 7. Build enriched task list grouped by yearTarget
+    // 7. Build tier status — which years are unlocked at the student's current level
+    const tierStatus = [1, 2, 3, 4].map((yr) => ({
+      year: yr,
+      unlocked: levelInfo.currentLevel >= (YEAR_UNLOCK_LEVEL[yr] ?? 0),
+      requiredLevel: YEAR_UNLOCK_LEVEL[yr] ?? 0,
+    }));
+
+    // 8. Build enriched task list grouped by yearTarget — only unlocked years
     const tasksByYear = {};
     for (const task of allActiveTasks) {
       const taskId = task._id.toString();
-      const yr = String(task.yearTarget);
-      if (!tasksByYear[yr]) tasksByYear[yr] = [];
+      const yr = task.yearTarget;
+
+      // Skip tasks whose tier the student hasn't unlocked yet
+      if (levelInfo.currentLevel < (YEAR_UNLOCK_LEVEL[yr] ?? 0)) continue;
+
+      const yrKey = String(yr);
+      if (!tasksByYear[yrKey]) tasksByYear[yrKey] = [];
 
       const compSummary = completionsByTask[taskId] || null;
 
-      tasksByYear[yr].push({
+      tasksByYear[yrKey].push({
         _id: taskId,
         title: task.title,
         description: task.description,
@@ -123,6 +135,7 @@ router.get("/me", authenticateToken, async (req, res) => {
         yearTarget: task.yearTarget,
         sortOrder: task.sortOrder,
         maxCompletions: task.maxCompletions,
+        requiresEvent: task.requiresEvent || false,
         isCompleted: !!compSummary,
         completionCount: compSummary ? compSummary.count : 0,
         latestCompletion: compSummary
@@ -145,6 +158,7 @@ router.get("/me", authenticateToken, async (req, res) => {
       levelInfo,
       badges,
       tasksByYear,
+      tierStatus,
       summary: {
         totalTasksAvailable: allActiveTasks.length,
         totalTasksCompleted: completedTaskIds.size,
@@ -185,6 +199,53 @@ router.post("/complete/:taskId", authenticateToken, async (req, res) => {
       }
     }
 
+    // 2b. If the task requires event attendance, validate the linked event
+    let linkedEventId = null;
+    if (task.requiresEvent) {
+      const { eventId } = req.body;
+      if (!eventId) {
+        return res.status(400).json({
+          message: "This task requires selecting an event you RSVP'd to",
+        });
+      }
+
+      const event = await Event.findById(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      // Verify student RSVP'd
+      const isAttendee = event.attendees.some(
+        (id) => id.toString() === studentId.toString()
+      );
+      if (!isAttendee) {
+        return res.status(403).json({
+          message: "You must RSVP to this event before using it to complete a task",
+        });
+      }
+
+      // Verify category match
+      if (event.scoreboardCategory !== task.category) {
+        return res.status(400).json({
+          message: "This event's category does not match the task",
+        });
+      }
+
+      // Verify this event hasn't been used for this task already
+      const alreadyUsed = await TaskCompletion.findOne({
+        student: studentId,
+        task: taskId,
+        linkedEvent: eventId,
+      });
+      if (alreadyUsed) {
+        return res.status(409).json({
+          message: "You've already used this event for this task. RSVP to a different event.",
+        });
+      }
+
+      linkedEventId = eventId;
+    }
+
     // 3. Compute the student's current level to check against the standing cap
     const existingCompletions = await TaskCompletion.find({ student: studentId }).populate(
       "task",
@@ -209,6 +270,7 @@ router.post("/complete/:taskId", authenticateToken, async (req, res) => {
       pointsAwarded,
       cappedAtStanding,
       capReason,
+      linkedEvent: linkedEventId,
     });
     await completion.save();
 
@@ -233,6 +295,55 @@ router.post("/complete/:taskId", authenticateToken, async (req, res) => {
   } catch (err) {
     console.error("POST /scoreboard/complete/:taskId error:", err);
     res.status(500).json({ message: "Failed to complete task", error: err.message });
+  }
+});
+
+// ─── GET /api/scoreboard/eligible-events/:taskId ─────────────────────────────
+// Returns events the student can use to complete a requiresEvent task.
+router.get("/eligible-events/:taskId", authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user._id;
+    const { taskId } = req.params;
+
+    // 1. Verify the task exists and requires an event
+    const task = await ScoreboardTask.findOne({ _id: taskId, isActive: true });
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    if (!task.requiresEvent) {
+      return res.status(400).json({ message: "This task does not require an event" });
+    }
+
+    // 2. Find events where student is an attendee AND category matches
+    const matchingEvents = await Event.find({
+      scoreboardCategory: task.category,
+      attendees: studentId,
+    }).sort({ createdAt: -1 });
+
+    // 3. Exclude events already used for this task by this student
+    const usedEventIds = (
+      await TaskCompletion.find({
+        student: studentId,
+        task: taskId,
+        linkedEvent: { $ne: null },
+      }).select("linkedEvent")
+    ).map((c) => c.linkedEvent.toString());
+
+    const usedSet = new Set(usedEventIds);
+    const eligible = matchingEvents
+      .filter((evt) => !usedSet.has(evt._id.toString()))
+      .map((evt) => ({
+        _id: evt._id,
+        title: evt.title,
+        date: evt.date,
+        location: evt.location,
+        scoreboardCategory: evt.scoreboardCategory,
+      }));
+
+    res.json({ events: eligible });
+  } catch (err) {
+    console.error("GET /scoreboard/eligible-events/:taskId error:", err);
+    res.status(500).json({ message: "Failed to fetch eligible events", error: err.message });
   }
 });
 

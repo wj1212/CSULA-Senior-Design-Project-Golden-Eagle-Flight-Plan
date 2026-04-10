@@ -24,13 +24,13 @@ const FacultyDashboard: React.FC = () => {
     resource: { title: '', url: '', description: '', hashtags: '' },
 
     events: [] as EventItem[],
-    event: { title: '', date: '', location: '', description: '', hashtags: '' },
+    event: { title: '', date: '', location: '', description: '', hashtags: '', scoreboardCategory: '' as string },
   });
 
   const [loading, setLoading] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
-  const [editForm, setEditForm] = useState({ title: '', url: '', date: '', location: '', description: '', hashtags: '' });
+  const [editForm, setEditForm] = useState({ title: '', url: '', date: '', location: '', description: '', hashtags: '', scoreboardCategory: '' });
 
   // Load resources and events on mount
   useEffect(() => {
@@ -127,6 +127,7 @@ const FacultyDashboard: React.FC = () => {
       location: '',
       description: resource.description || '',
       hashtags: resource.hashtags.join(', '),
+      scoreboardCategory: '',
     });
   };
 
@@ -140,13 +141,14 @@ const FacultyDashboard: React.FC = () => {
       location: event.location || '',
       description: event.description || '',
       hashtags: event.hashtags.join(', '),
+      scoreboardCategory: event.scoreboardCategory || '',
     });
   };
 
   const cancelEdit = () => {
     setEditingResource(null);
     setEditingEvent(null);
-    setEditForm({ title: '', url: '', date: '', location: '', description: '', hashtags: '' });
+    setEditForm({ title: '', url: '', date: '', location: '', description: '', hashtags: '', scoreboardCategory: '' });
   };
 
   const saveResourceEdit = async () => {
@@ -190,7 +192,7 @@ const FacultyDashboard: React.FC = () => {
   const saveEventEdit = async () => {
     if (!editingEvent) return;
 
-    const { title, date, location, description, hashtags } = editForm;
+    const { title, date, location, description, hashtags, scoreboardCategory } = editForm;
     if (!title.trim() || !date.trim()) {
       Alert.alert('Error', 'Title and date are required');
       return;
@@ -206,6 +208,7 @@ const FacultyDashboard: React.FC = () => {
         location: location?.trim(),
         description: description?.trim(),
         hashtags: parsedHashtags,
+        scoreboardCategory: scoreboardCategory || null,
       });
 
       if (result.success && result.event) {
@@ -277,9 +280,9 @@ const FacultyDashboard: React.FC = () => {
 
   const addEvent = useCallback(async () => {
     console.log('addEvent called');
-    const { title, date, location, description, hashtags } = s.event;
-    console.log('Event data:', { title, date, location, description, hashtags });
-    
+    const { title, date, location, description, hashtags, scoreboardCategory } = s.event;
+    console.log('Event data:', { title, date, location, description, hashtags, scoreboardCategory });
+
     if (!title.trim() || !date.trim()) {
       console.log('Validation failed: missing title or date');
       Alert.alert('Error', 'Title and date are required');
@@ -297,6 +300,7 @@ const FacultyDashboard: React.FC = () => {
         location: location?.trim(),
         description: description?.trim(),
         hashtags: parsedHashtags,
+        scoreboardCategory: scoreboardCategory || null,
       });
 
       console.log('Create event result:', result);
@@ -305,7 +309,7 @@ const FacultyDashboard: React.FC = () => {
         set(x => ({
           ...x,
           events: [result.event!, ...x.events],
-          event: { title: '', date: '', location: '', description: '', hashtags: '' },
+          event: { title: '', date: '', location: '', description: '', hashtags: '', scoreboardCategory: '' },
         }));
         Alert.alert('Success', 'Event created successfully');
       } else {
@@ -535,8 +539,40 @@ const FacultyDashboard: React.FC = () => {
           autoCapitalize="none"
         />
         <Text style={styles.hashtagHint}>
-          💡 Tip: Separate hashtags with commas. The # symbol is optional.
+          Tip: Separate hashtags with commas. The # symbol is optional.
         </Text>
+
+        <Text style={styles.dropdownLabel}>Scoreboard Category (optional)</Text>
+        <View style={styles.categoryDropdown}>
+          {[
+            { value: '', label: 'None' },
+            { value: 'ACADEMIC_PROGRESS', label: 'Academic' },
+            { value: 'CAREER_PREP', label: 'Career' },
+            { value: 'COMMUNITY_LEADERSHIP', label: 'Community' },
+          ].map((opt) => (
+            <TouchableOpacity
+              key={opt.value}
+              style={[
+                styles.categoryOption,
+                s.event.scoreboardCategory === opt.value && styles.categoryOptionActive,
+              ]}
+              onPress={() => merge('event')({ scoreboardCategory: opt.value })}
+            >
+              <Text
+                style={[
+                  styles.categoryOptionText,
+                  s.event.scoreboardCategory === opt.value && styles.categoryOptionTextActive,
+                ]}
+              >
+                {opt.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Text style={styles.categoryHint}>
+          Link this event to the student scoreboard so RSVP'd students can earn points.
+        </Text>
+
         <Button label={loading ? 'Adding...' : 'Add Event'} onPress={addEvent} disabled={loading} />
         
         {s.events.length === 0 ? (
@@ -548,9 +584,16 @@ const FacultyDashboard: React.FC = () => {
               <View key={e._id} style={styles.card}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.listTitle}>{e.title}</Text>
-                  <Text style={styles.dim}>📅 {e.date}</Text>
-                  {!!e.location && <Text style={styles.dim}>📍 {e.location}</Text>}
+                  <Text style={styles.dim}>{e.date}</Text>
+                  {!!e.location && <Text style={styles.dim}>{e.location}</Text>}
                   {!!e.description && <Text style={styles.body}>{e.description}</Text>}
+                  {!!e.scoreboardCategory && (
+                    <View style={styles.scoreboardTag}>
+                      <Text style={styles.scoreboardTagText}>
+                        Scoreboard: {e.scoreboardCategory === 'ACADEMIC_PROGRESS' ? 'Academic' : e.scoreboardCategory === 'CAREER_PREP' ? 'Career' : 'Community'}
+                      </Text>
+                    </View>
+                  )}
                   <View style={styles.chipsWrap}>
                     {e.hashtags.map((tag, idx) => (
                       <View key={`${tag}-${idx}`} style={styles.chipSmall}>
@@ -677,8 +720,40 @@ const FacultyDashboard: React.FC = () => {
                 autoCapitalize="none"
               />
               <Text style={styles.hashtagHint}>
-                💡 Tip: Separate hashtags with commas. The # symbol is optional.
+                Tip: Separate hashtags with commas. The # symbol is optional.
               </Text>
+
+              <Text style={styles.dropdownLabel}>Scoreboard Category (optional)</Text>
+              <View style={styles.categoryDropdown}>
+                {[
+                  { value: '', label: 'None' },
+                  { value: 'ACADEMIC_PROGRESS', label: 'Academic' },
+                  { value: 'CAREER_PREP', label: 'Career' },
+                  { value: 'COMMUNITY_LEADERSHIP', label: 'Community' },
+                ].map((opt) => (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={[
+                      styles.categoryOption,
+                      editForm.scoreboardCategory === opt.value && styles.categoryOptionActive,
+                    ]}
+                    onPress={() => setEditForm({ ...editForm, scoreboardCategory: opt.value })}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryOptionText,
+                        editForm.scoreboardCategory === opt.value && styles.categoryOptionTextActive,
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.categoryHint}>
+                Link this event to the student scoreboard so RSVP'd students can earn points.
+              </Text>
+
               <View style={styles.modalButtons}>
                 <TouchableOpacity onPress={cancelEdit} style={[styles.modalButton, styles.cancelButton]}>
                   <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -850,5 +925,59 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: COLORS.onPrimary,
     fontWeight: '700',
+  },
+
+  // Scoreboard category dropdown
+  dropdownLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
+    marginTop: SPACING.xs,
+  },
+  categoryDropdown: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.xs,
+    marginBottom: SPACING.xs,
+  },
+  categoryOption: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  categoryOptionActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary,
+  },
+  categoryOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  categoryOptionTextActive: {
+    color: COLORS.onPrimary,
+  },
+  categoryHint: {
+    fontSize: 12,
+    color: COLORS.muted,
+    fontStyle: 'italic',
+    marginBottom: SPACING.sm,
+  },
+  scoreboardTag: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#ca8a0420',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginTop: SPACING.xs,
+  },
+  scoreboardTagText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#ca8a04',
   },
 });

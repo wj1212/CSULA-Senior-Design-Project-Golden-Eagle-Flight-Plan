@@ -68,8 +68,21 @@ export interface CourseProgress {
 export type ScoreboardCategory =
   | 'ACADEMIC_PROGRESS'
   | 'CAREER_PREP'
-  | 'PROFESSIONAL_SKILLS'
   | 'COMMUNITY_LEADERSHIP';
+
+export interface TierStatus {
+  year: 1 | 2 | 3 | 4;
+  unlocked: boolean;
+  requiredLevel: number;
+}
+
+export interface EligibleEvent {
+  _id: string;
+  title: string;
+  date: string;
+  location?: string;
+  scoreboardCategory: string;
+}
 
 export interface TaskCompletionSummary {
   completedAt: string;
@@ -87,6 +100,7 @@ export interface ScoreboardTask {
   yearTarget: 1 | 2 | 3 | 4;
   sortOrder: number;
   maxCompletions: number | null;
+  requiresEvent: boolean;
   isCompleted: boolean;
   completionCount: number;
   latestCompletion: TaskCompletionSummary | null;
@@ -127,6 +141,7 @@ export interface ScoreboardProgress {
   levelInfo: LevelInfo;
   badges: ScoreboardBadge[];
   tasksByYear: Record<string, ScoreboardTask[]>;
+  tierStatus: TierStatus[];
   summary: {
     totalTasksAvailable: number;
     totalTasksCompleted: number;

@@ -46,7 +46,7 @@ router.post("/events", authenticateToken, async (req, res) => {
       return res.status(403).json({ message: "Only faculty or student organizations can create events" });
     }
 
-    const { title, date, location, description, hashtags } = req.body;
+    const { title, date, location, description, hashtags, scoreboardCategory } = req.body;
 
     if (!title || !date) {
       return res.status(400).json({ message: "Title and date are required" });
@@ -60,6 +60,7 @@ router.post("/events", authenticateToken, async (req, res) => {
       hashtags: hashtags || [],
       createdBy: req.user._id,
       createdByName: req.user.name,
+      scoreboardCategory: scoreboardCategory || null,
     });
 
     await event.save();
@@ -148,7 +149,7 @@ router.put("/events/:id", authenticateToken, async (req, res) => {
       return res.status(403).json({ message: "You can only update your own events" });
     }
 
-    const { title, date, location, description, hashtags } = req.body;
+    const { title, date, location, description, hashtags, scoreboardCategory } = req.body;
 
     if (!title || !date) {
       return res.status(400).json({ message: "Title and date are required" });
@@ -159,6 +160,7 @@ router.put("/events/:id", authenticateToken, async (req, res) => {
     event.location = location || "";
     event.description = description || "";
     event.hashtags = hashtags || [];
+    event.scoreboardCategory = scoreboardCategory ?? event.scoreboardCategory;
 
     await event.save();
     res.json({ message: "Event updated successfully", event });
@@ -214,17 +216,30 @@ router.get("/resources", authenticateToken, async (req, res) => {
 });
 
 // Get all events (optionally filter by hashtag)
+// Enriches each event with rsvpCount and isRsvped for the authenticated student.
 router.get("/events", authenticateToken, async (req, res) => {
   try {
     const { hashtag } = req.query;
-    
+
     let query = {};
     if (hashtag) {
       query.hashtags = hashtag; // Filter by hashtag
     }
 
     const events = await Event.find(query).sort({ createdAt: -1 });
-    res.json({ events });
+
+    const userId = req.user._id.toString();
+    const enriched = events.map((evt) => {
+      const obj = evt.toObject();
+      obj.rsvpCount = (obj.attendees || []).length;
+      obj.isRsvped = (obj.attendees || []).some(
+        (id) => id.toString() === userId
+      );
+      delete obj.attendees; // don't leak the full attendees list to clients
+      return obj;
+    });
+
+    res.json({ events: enriched });
   } catch (error) {
     console.error("Error fetching events:", error);
     res.status(500).json({ message: "Failed to fetch events", error: error.message });
@@ -245,6 +260,47 @@ router.get("/hashtags", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("Error fetching hashtags:", error);
     res.status(500).json({ message: "Failed to fetch hashtags", error: error.message });
+  }
+});
+
+// ==================== RSVP ROUTES ====================
+
+// RSVP to an event
+router.post("/events/:id/rsvp", authenticateToken, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // $addToSet is idempotent — won't add duplicates
+    await Event.findByIdAndUpdate(req.params.id, {
+      $addToSet: { attendees: req.user._id },
+    });
+
+    res.json({ message: "RSVP'd successfully" });
+  } catch (error) {
+    console.error("Error RSVPing to event:", error);
+    res.status(500).json({ message: "Failed to RSVP", error: error.message });
+  }
+});
+
+// Cancel RSVP to an event
+router.delete("/events/:id/rsvp", authenticateToken, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    await Event.findByIdAndUpdate(req.params.id, {
+      $pull: { attendees: req.user._id },
+    });
+
+    res.json({ message: "RSVP cancelled" });
+  } catch (error) {
+    console.error("Error cancelling RSVP:", error);
+    res.status(500).json({ message: "Failed to cancel RSVP", error: error.message });
   }
 });
 

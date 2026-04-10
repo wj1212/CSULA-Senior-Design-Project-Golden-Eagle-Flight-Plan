@@ -27,6 +27,14 @@ const TaskCompletionSchema = new mongoose.Schema(
 
     // Human-readable explanation when cappedAtStanding is true.
     capReason: { type: String, default: "" },
+
+    // The event used to complete this task (only for requiresEvent tasks).
+    // Prevents the same event from being reused for multiple completions.
+    linkedEvent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Event",
+      default: null,
+    },
   },
   { timestamps: true } // createdAt serves as the completion timestamp
 );

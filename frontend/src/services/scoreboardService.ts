@@ -3,6 +3,7 @@ import { getStoredToken, clearStoredToken } from './authService';
 import {
   ScoreboardProgress,
   CompleteTaskResponse,
+  EligibleEvent,
 } from '../types';
 
 // API Base URL — set EXPO_PUBLIC_API_URL in your local .env file.
@@ -64,14 +65,29 @@ const scoreboardService = {
   },
 
   // POST /api/scoreboard/complete/:taskId
-  completeTask: async (taskId: string): Promise<{ success: boolean; data?: CompleteTaskResponse; error?: string }> => {
+  // Pass eventId for tasks that require event attendance.
+  completeTask: async (taskId: string, eventId?: string): Promise<{ success: boolean; data?: CompleteTaskResponse; error?: string }> => {
     try {
-      const response = await api.post(`/scoreboard/complete/${taskId}`);
+      const body = eventId ? { eventId } : {};
+      const response = await api.post(`/scoreboard/complete/${taskId}`, body);
       return { success: true, data: response.data };
     } catch (error: any) {
       return {
         success: false,
         error: error.response?.data?.message || error.message || 'Failed to complete task',
+      };
+    }
+  },
+
+  // GET /api/scoreboard/eligible-events/:taskId
+  getEligibleEvents: async (taskId: string): Promise<{ success: boolean; events?: EligibleEvent[]; error?: string }> => {
+    try {
+      const response = await api.get(`/scoreboard/eligible-events/${taskId}`);
+      return { success: true, events: response.data.events };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || 'Failed to fetch eligible events',
       };
     }
   },

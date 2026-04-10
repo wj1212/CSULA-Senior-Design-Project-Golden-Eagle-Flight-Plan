@@ -13,6 +13,20 @@ const EventSchema = new mongoose.Schema(
       required: true,
     },
     createdByName: { type: String, default: "" }, // cache faculty name for display
+
+    // Students who RSVP'd to this event
+    attendees: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
+
+    // Optional link to the scoreboard — faculty sets this when creating an event
+    // so RSVP'd students can use it to complete matching milestone tasks.
+    scoreboardCategory: {
+      type: String,
+      enum: ["ACADEMIC_PROGRESS", "CAREER_PREP", "COMMUNITY_LEADERSHIP", null],
+      default: null,
+    },
   },
   { timestamps: true }
 );

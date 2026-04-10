@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 const CATEGORIES = [
   "ACADEMIC_PROGRESS",
   "CAREER_PREP",
-  "PROFESSIONAL_SKILLS",
   "COMMUNITY_LEADERSHIP",
 ];
 
@@ -34,6 +33,10 @@ const ScoreboardTaskSchema = new mongoose.Schema(
 
     // null = unlimited repeats; 1 = one-time only; N = up to N completions
     maxCompletions: { type: Number, default: 1 },
+
+    // When true, completing this task requires selecting an RSVP'd event
+    // whose scoreboardCategory matches the task's category.
+    requiresEvent: { type: Boolean, default: false },
 
     // Soft-delete: false hides the task without losing completion history
     isActive: { type: Boolean, default: true },

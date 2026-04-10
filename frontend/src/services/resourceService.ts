@@ -28,6 +28,9 @@ export interface Event {
   createdByName: string;
   createdAt: string;
   updatedAt: string;
+  rsvpCount: number;
+  isRsvped: boolean;
+  scoreboardCategory: string | null;
 }
 
 // Faculty: Create a resource
@@ -73,6 +76,7 @@ export const createEvent = async (data: {
   location?: string;
   description?: string;
   hashtags?: string[];
+  scoreboardCategory?: string | null;
 }): Promise<{ success: boolean; event?: Event; error?: string }> => {
   try {
     console.log('Creating event with data:', data);
@@ -182,6 +186,7 @@ export const updateEvent = async (
     location?: string;
     description?: string;
     hashtags?: string[];
+    scoreboardCategory?: string | null;
   }
 ): Promise<{ success: boolean; event?: Event; error?: string }> => {
   try {
@@ -323,6 +328,57 @@ export const getHashtags = async (): Promise<{
     }
   } catch (error) {
     console.error('Get hashtags error:', error);
+    return { success: false, error: 'Network error' };
+  }
+};
+
+// RSVP to an event
+export const rsvpEvent = async (
+  eventId: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const token = await getStoredToken();
+    const response = await fetch(`${API_URL}/events/${eventId}/rsvp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.ok) {
+      return { success: true };
+    } else {
+      const result = await response.json();
+      return { success: false, error: result.message || 'Failed to RSVP' };
+    }
+  } catch (error) {
+    console.error('RSVP error:', error);
+    return { success: false, error: 'Network error' };
+  }
+};
+
+// Cancel RSVP to an event
+export const cancelRsvp = async (
+  eventId: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const token = await getStoredToken();
+    const response = await fetch(`${API_URL}/events/${eventId}/rsvp`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.ok) {
+      return { success: true };
+    } else {
+      const result = await response.json();
+      return { success: false, error: result.message || 'Failed to cancel RSVP' };
+    }
+  } catch (error) {
+    console.error('Cancel RSVP error:', error);
     return { success: false, error: 'Network error' };
   }
 };

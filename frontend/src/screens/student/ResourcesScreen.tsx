@@ -19,6 +19,12 @@ import * as resourceService from '../../services/resourceService';
 type Resource = resourceService.Resource;
 type Event = resourceService.Event;
 
+const SCOREBOARD_CATEGORY_LABEL: Record<string, string> = {
+  ACADEMIC_PROGRESS: 'Academic',
+  CAREER_PREP: 'Career',
+  COMMUNITY_LEADERSHIP: 'Community',
+};
+
 export const ResourcesScreen: React.FC = () => {
   const [resources, setResources] = useState<Resource[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -27,6 +33,7 @@ export const ResourcesScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'resources' | 'events'>('all');
+  const [togglingRsvp, setTogglingRsvp] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -57,6 +64,44 @@ export const ResourcesScreen: React.FC = () => {
     await loadData();
     setRefreshing(false);
   }, [selectedHashtag]);
+
+  const handleRsvpToggle = async (event: Event) => {
+    if (togglingRsvp) return;
+    setTogglingRsvp(event._id);
+
+    const wasRsvped = event.isRsvped;
+
+    // Optimistic update
+    setEvents((prev) =>
+      prev.map((e) =>
+        e._id === event._id
+          ? {
+              ...e,
+              isRsvped: !wasRsvped,
+              rsvpCount: wasRsvped ? e.rsvpCount - 1 : e.rsvpCount + 1,
+            }
+          : e
+      )
+    );
+
+    const result = wasRsvped
+      ? await resourceService.cancelRsvp(event._id)
+      : await resourceService.rsvpEvent(event._id);
+
+    if (!result.success) {
+      // Revert on failure
+      setEvents((prev) =>
+        prev.map((e) =>
+          e._id === event._id
+            ? { ...e, isRsvped: wasRsvped, rsvpCount: event.rsvpCount }
+            : e
+        )
+      );
+      Alert.alert('Error', result.error || 'Failed to update RSVP');
+    }
+
+    setTogglingRsvp(null);
+  };
 
   const openUrl = async (url: string) => {
     try {
@@ -155,6 +200,14 @@ export const ResourcesScreen: React.FC = () => {
           <Text style={styles.cardTitle}>{event.title}</Text>
           <Text style={styles.cardMeta}>By {event.createdByName}</Text>
         </View>
+        {event.scoreboardCategory && (
+          <View style={styles.scoreboardChip}>
+            <Ionicons name="trophy" size={12} color={COLORS.secondary} />
+            <Text style={styles.scoreboardChipText}>
+              {SCOREBOARD_CATEGORY_LABEL[event.scoreboardCategory] || 'Scoreboard'}
+            </Text>
+          </View>
+        )}
       </View>
       <View style={styles.eventDetails}>
         <View style={styles.eventDetailRow}>
@@ -177,6 +230,26 @@ export const ResourcesScreen: React.FC = () => {
             <Text style={styles.cardHashtagText}>{tag}</Text>
           </View>
         ))}
+      </View>
+      <View style={styles.rsvpRow}>
+        <TouchableOpacity
+          style={[styles.rsvpButton, event.isRsvped && styles.rsvpButtonActive]}
+          onPress={() => handleRsvpToggle(event)}
+          disabled={togglingRsvp === event._id}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name={event.isRsvped ? 'checkmark-circle' : 'add-circle-outline'}
+            size={18}
+            color={event.isRsvped ? COLORS.onPrimary : COLORS.secondary}
+          />
+          <Text style={[styles.rsvpButtonText, event.isRsvped && styles.rsvpButtonTextActive]}>
+            {event.isRsvped ? "RSVP'd" : 'RSVP'}
+          </Text>
+        </TouchableOpacity>
+        <Text style={styles.rsvpCount}>
+          {event.rsvpCount} {event.rsvpCount === 1 ? 'person' : 'people'} going
+        </Text>
       </View>
     </View>
   );
@@ -431,6 +504,54 @@ const styles = StyleSheet.create({
   eventDetailText: {
     fontSize: 13,
     color: COLORS.text,
+  },
+
+  // RSVP
+  rsvpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.md,
+    gap: SPACING.sm,
+  },
+  rsvpButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: COLORS.secondary,
+  },
+  rsvpButtonActive: {
+    backgroundColor: COLORS.secondary,
+    borderColor: COLORS.secondary,
+  },
+  rsvpButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.secondary,
+  },
+  rsvpButtonTextActive: {
+    color: COLORS.onPrimary,
+  },
+  rsvpCount: {
+    fontSize: 12,
+    color: COLORS.muted,
+  },
+  scoreboardChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: COLORS.secondary + '20',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  scoreboardChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.secondary,
   },
 
   // Empty State

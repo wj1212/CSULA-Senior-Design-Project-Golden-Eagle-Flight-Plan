@@ -21,14 +21,31 @@ export const LEVEL_THRESHOLDS = [
   5500, // Level 10 ← Year 4 suggested target
 ];
 
-// Maximum level a student can reach based on their academic standing.
-// Keys must match the gradeLevel enum values in the User model exactly.
+// Standing caps are disabled — students can reach any level regardless of grade.
+// Kept as a constant so the rest of the code doesn't break; every grade maps to 10.
 export const STANDING_CAPS = {
-  Freshman:  4,
-  Sophomore: 6,
-  Junior:    8,
+  Freshman:  10,
+  Sophomore: 10,
+  Junior:    10,
   Senior:    10,
   Graduate:  10,
+};
+
+// Display names for each year tier.
+export const YEAR_LABELS = {
+  1: 'Baby Eagle',
+  2: 'Fledgling Eagle',
+  3: 'Soaring Eagle',
+  4: 'Golden Eagle',
+};
+
+// Minimum level required for each year tier's tasks to be visible.
+// Year 1 is always visible (0 = no requirement).
+export const YEAR_UNLOCK_LEVEL = {
+  1: 0,
+  2: 4,
+  3: 6,
+  4: 8,
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -39,9 +56,8 @@ export const STANDING_CAPS = {
  */
 function requiredCategoryDiversity(targetLevel) {
   if (targetLevel <= 1) return 0;
-  if (targetLevel <= 3) return 2; // Levels 2–3
-  if (targetLevel <= 6) return 3; // Levels 4–6
-  return 4;                       // Levels 7–10
+  if (targetLevel <= 3) return 2; // Levels 2–3: 2 of 3 categories
+  return 3;                       // Levels 4–10: all 3 categories
 }
 
 // ─── Main Exports ─────────────────────────────────────────────────────────────
@@ -160,10 +176,11 @@ export function computeBadges(allActiveTasks, completedTaskIds) {
     const completedForYear = taskIds.filter((id) => completedTaskIds.has(id)).length;
     const earned = totalForYear > 0 && completedForYear === totalForYear;
 
+    const tierName = YEAR_LABELS[Number(year)] ?? `Year ${year} Eagle`;
     badges.push({
       year: Number(year),
-      label: `Year ${year} Eagle`,
-      description: `Complete all Year ${year} milestone tasks`,
+      label: tierName,
+      description: `Complete all ${tierName} milestone tasks`,
       earned,
       completedForYear,
       totalForYear,
