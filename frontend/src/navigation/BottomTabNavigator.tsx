@@ -16,7 +16,6 @@ import { SPACING } from '../constants/spacing';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import FacultyDashboard from '../screens/faculty/FacultyDashboard';
-import StudentProfileViewer from '../screens/faculty/StudentProfileViewer';
 import AdminDashboard from '../screens/admin/AdminDashboard';
 
 type NavParamList = {
@@ -28,7 +27,6 @@ type NavParamList = {
   Settings: undefined;
   Profile: undefined;
   FacultyDashboard: undefined;
-  StudentProfileViewer: undefined;
   AdminDashboard: undefined;
 };
 
@@ -79,9 +77,6 @@ export const BottomTabNavigator: React.FC = () => {
               case 'Home':
                 iconName = focused ? 'home' : 'home-outline';
                 break;
-              case 'StudentProfileViewer':
-                iconName = focused ? 'people' : 'people-outline';
-                break;
               default:
                 iconName = 'help-outline';
             }
@@ -108,12 +103,7 @@ export const BottomTabNavigator: React.FC = () => {
         <Tab.Screen
           name="Home"
           component={FacultyDashboard}
-          options={{ title: rawType === 'Student Organization' ? 'Organization' : 'Faculty' }}
-        />
-        <Tab.Screen
-          name="StudentProfileViewer"
-          component={StudentProfileViewer}
-          options={{ title: 'Student View' }}
+          options={{ title: 'Posting Events' }}
         />
       </Tab.Navigator>
     );

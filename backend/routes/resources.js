@@ -203,6 +203,12 @@ router.get("/resources", authenticateToken, async (req, res) => {
     const { hashtag } = req.query;
     
     let query = {};
+    
+    // Faculty and Student Organization accounts only see their own resources
+    if (req.user.userType === "Faculty" || req.user.userType === "Student Organization") {
+      query.createdBy = req.user._id;
+    }
+    
     if (hashtag) {
       query.hashtags = hashtag; // Filter by hashtag
     }
@@ -222,6 +228,12 @@ router.get("/events", authenticateToken, async (req, res) => {
     const { hashtag } = req.query;
 
     let query = {};
+    
+    // Faculty and Student Organization accounts only see their own events
+    if (req.user.userType === "Faculty" || req.user.userType === "Student Organization") {
+      query.createdBy = req.user._id;
+    }
+    
     if (hashtag) {
       query.hashtags = hashtag; // Filter by hashtag
     }
