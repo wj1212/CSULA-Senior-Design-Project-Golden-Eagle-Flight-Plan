@@ -21,8 +21,7 @@ export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { user, logout, refreshProfile, updateProfile } = useAuth();
 
-  // Privacy & notifications (populated from user on mount)
-  const [isProfilePublic, setIsProfilePublic] = useState(true);
+  // Notifications (populated from user on mount)
   const [notifEvents, setNotifEvents] = useState(true);
   const [notifMilestones, setNotifMilestones] = useState(true);
 
@@ -38,7 +37,6 @@ export const SettingsScreen: React.FC = () => {
   // Populate toggles from user object
   useEffect(() => {
     if (user) {
-      setIsProfilePublic((user as any).isProfilePublic ?? true);
       setNotifEvents((user as any).notificationPrefs?.events ?? true);
       setNotifMilestones((user as any).notificationPrefs?.scoreboardMilestones ?? true);
     }
@@ -47,11 +45,6 @@ export const SettingsScreen: React.FC = () => {
   const saveToggle = async (patch: Record<string, any>) => {
     await updateProfile(patch);
     await refreshProfile();
-  };
-
-  const handleProfilePublicToggle = (val: boolean) => {
-    setIsProfilePublic(val);
-    saveToggle({ isProfilePublic: val });
   };
 
   const handleNotifEventsToggle = (val: boolean) => {
@@ -205,24 +198,6 @@ export const SettingsScreen: React.FC = () => {
             <Switch
               value={notifMilestones}
               onValueChange={handleNotifMilestonesToggle}
-              trackColor={{ false: COLORS.border, true: COLORS.primary }}
-              thumbColor={COLORS.white}
-            />
-          </View>
-        </View>
-
-        {/* ── Privacy ────────────────────────────────── */}
-        <Text style={styles.sectionLabel}>PRIVACY</Text>
-        <View style={styles.group}>
-          <View style={styles.row}>
-            <Ionicons name="eye-outline" size={20} color={COLORS.text} style={styles.rowIcon} />
-            <View style={styles.rowTextBlock}>
-              <Text style={styles.rowLabel}>Public Profile</Text>
-              <Text style={styles.rowSub}>Allow faculty to view your profile</Text>
-            </View>
-            <Switch
-              value={isProfilePublic}
-              onValueChange={handleProfilePublicToggle}
               trackColor={{ false: COLORS.border, true: COLORS.primary }}
               thumbColor={COLORS.white}
             />
