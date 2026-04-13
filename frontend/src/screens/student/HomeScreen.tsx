@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,42 +9,68 @@ import {
   useWindowDimensions,
   KeyboardAvoidingView,
   Platform,
-  Modal,
-  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatCard } from '../../components/StatCard';
-import { OpportunityCard } from '../../components/OpportunityCard';
-import { mockUser, mockOpportunities, mockCourses } from '../../data/mockData';
+import { mockUser } from '../../data/mockData';
 import { CircleButton } from '../../components/CircleButton';
 import { COLORS } from '../../constants/colors';
 import { SPACING } from '../../constants/spacing';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
-import { Opportunity } from '../../types';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import scoreboardService from '../../services/scoreboardService';
+import * as resourceService from '../../services/resourceService';
+import { ScoreboardProgress } from '../../types';
+
 export const HomeScreen: React.FC = () => {
   const { width } = useWindowDimensions();
   const { user, loading } = useAuth();
-  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
+  const navigation = useNavigation<any>();
 
-  const handleCardPress = async (url: string) => {
-    const supported = await Linking.canOpenURL(url);
-    if (supported) {
-      await Linking.openURL(url);
-    } else {
-      console.log(`Don't know how to open this URL: ${url}`);
-    }
+  const [scoreProgress, setScoreProgress] = useState<ScoreboardProgress | null>(null);
+  const [upcomingEvents, setUpcomingEvents] = useState<resourceService.Event[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      scoreboardService.getMyProgress().then((result) => {
+        if (result.success && result.progress) setScoreProgress(result.progress);
+      });
+      resourceService.getEvents().then((result) => {
+        if (result.success) setUpcomingEvents((result.events ?? []).slice(0, 2));
+      });
+    }, [])
+  );
+
+  // Quick action navigation
+  const handleScoreboardPress  = () => navigation.navigate('Plan');
+  const handleBrowseEventsPress = () => navigation.navigate('Resources');
+  const handleOpportunitiesPress = () => navigation.navigate('Opportunities');
+
+  // Circle press handlers (navigate to Scoreboard for now)
+  const handleAcademicPress   = () => navigation.navigate('Plan');
+  const handleCareerPress     = () => navigation.navigate('Plan');
+  const handleLeadershipPress = () => navigation.navigate('Plan');
+
+  // Per-category scoreboard stats
+  const getCategoryStats = (cat: string) => {
+    if (!scoreProgress) return { points: undefined, percent: undefined };
+    const points = (scoreProgress.levelInfo.pointsByCategory as Record<string, number>)[cat] ?? 0;
+    const allTasks = Object.values(scoreProgress.tasksByYear).flat();
+    const catTasks = allTasks.filter((t) => t.category === cat);
+    const completed = catTasks.filter((t) => t.completionCount > 0).length;
+    const percent = catTasks.length > 0 ? Math.round((completed / catTasks.length) * 100) : 0;
+    return { points, percent };
   };
-  const handleAcademicPress = () => console.log('Academic Press');
-  const handleCareerPress = () => console.log('Career Press');
-  const handleLeadershipPress = () => console.log('Leadership Press');
+  const academic  = getCategoryStats('ACADEMIC_PROGRESS');
+  const career    = getCategoryStats('CAREER_PREP');
+  const community = getCategoryStats('COMMUNITY_LEADERSHIP');
 
   // Circle button sizing
   const sidePadding = SPACING.xl * 2;
   const spacingBetweenCircles = SPACING.lg * 2;
   const dynamicSize = (width - sidePadding - spacingBetweenCircles) / 3;
-  const maxSize = 300;
-  const circleSize = Math.min(dynamicSize, maxSize);
+  const circleSize = Math.min(dynamicSize, 300);
 
   if (loading) {
     return (
@@ -54,9 +80,12 @@ export const HomeScreen: React.FC = () => {
     );
   }
 
-  // Use logged in user if available, else mock
   const displayUser = user ?? mockUser;
-  const careerProgress = (((displayUser.credits ?? mockUser.credits) / 120) * 100).toFixed(2);
+  const academicLevel = scoreProgress?.student?.gradeLevel ?? '—';
+
+  const categoryLabel = (cat: string) =>
+    cat === 'ACADEMIC_PROGRESS' ? 'Academic'
+      : cat === 'CAREER_PREP' ? 'Career' : 'Community';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -71,47 +100,102 @@ export const HomeScreen: React.FC = () => {
               Welcome back, {displayUser?.name?.split(' ')[0] ?? 'Student'}!
             </Text>
 
+            {/* Category progress circles */}
             <View style={styles.circleNavContainer}>
-              <CircleButton title="Academic" onPress={handleAcademicPress} size={circleSize} />
-              <CircleButton title="Career skills" onPress={handleCareerPress} size={circleSize} />
-              <CircleButton title="Leadership" onPress={handleLeadershipPress} size={circleSize} />
+              <CircleButton
+                title="Academic"
+                onPress={handleAcademicPress}
+                size={circleSize}
+                points={academic.points}
+                percent={academic.percent}
+                color="#552583"
+                icon="school-outline"
+              />
+              <CircleButton
+                title="Career"
+                onPress={handleCareerPress}
+                size={circleSize}
+                points={career.points}
+                percent={career.percent}
+                color="#ca8a04"
+                icon="briefcase-outline"
+              />
+              <CircleButton
+                title="Community"
+                onPress={handleLeadershipPress}
+                size={circleSize}
+                points={community.points}
+                percent={community.percent}
+                color="#16a34a"
+                icon="people-outline"
+              />
             </View>
 
-
-
+            {/* Stats row */}
             <View style={styles.statsContainer}>
               <StatCard value={displayUser.gpa ?? mockUser.gpa} label="Current GPA" />
               <StatCard value={displayUser.credits ?? mockUser.credits} label="Credits Earned" />
-              <StatCard value={careerProgress + "%"} label="Degree Progress" />
+              <StatCard value={academicLevel} label="Academic Level" />
             </View>
 
+            {/* Upcoming Events */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Recommended Opportunities</Text>
-              {mockOpportunities.slice(0, 2).map((opportunity) => (
-                <OpportunityCard
-                  key={opportunity.id}
-                  opportunity={opportunity}
-                  // Add these two lines to pass the instructions down to the card
-                  onApplyPress={() => handleCardPress(opportunity.link)}
-                  onLearnMorePress={() => setSelectedOpportunity(opportunity)}
-                />
-              ))}
-
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Upcoming Events</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Resources')}>
+                  <Text style={styles.seeAll}>See all</Text>
+                </TouchableOpacity>
+              </View>
+              {upcomingEvents.length === 0 ? (
+                <View style={styles.emptyEvents}>
+                  <Ionicons name="calendar-outline" size={36} color={COLORS.muted} />
+                  <Text style={styles.emptyEventsText}>No upcoming events yet</Text>
+                </View>
+              ) : (
+                upcomingEvents.map((event) => (
+                  <TouchableOpacity
+                    key={event._id}
+                    style={styles.eventCard}
+                    onPress={() => navigation.navigate('Resources')}
+                    activeOpacity={0.75}
+                  >
+                    <View style={styles.eventIconCol}>
+                      <Ionicons name="calendar" size={22} color={COLORS.secondary} />
+                    </View>
+                    <View style={styles.eventInfo}>
+                      <Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text>
+                      <Text style={styles.eventMeta}>{event.date}</Text>
+                      {event.location ? (
+                        <Text style={styles.eventMeta}>{event.location}</Text>
+                      ) : null}
+                    </View>
+                    {event.scoreboardCategory ? (
+                      <View style={styles.scoreboardChip}>
+                        <Text style={styles.scoreboardChipText}>
+                          {categoryLabel(event.scoreboardCategory)}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </TouchableOpacity>
+                ))
+              )}
             </View>
+
+            {/* Quick Actions */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
               <View style={styles.quickActions}>
-                <TouchableOpacity style={styles.quickAction}>
-                  <Ionicons name="book-outline" size={24} color={COLORS.primary} />
-                  <Text style={styles.quickActionText}>Add Courses</Text>
+                <TouchableOpacity style={styles.quickAction} onPress={handleScoreboardPress}>
+                  <Ionicons name="trophy-outline" size={26} color={COLORS.primary} />
+                  <Text style={styles.quickActionText}>My Scoreboard</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.quickAction}>
-                  <Ionicons name="at-outline" size={24} color={COLORS.primary} />
+                <TouchableOpacity style={styles.quickAction} onPress={handleBrowseEventsPress}>
+                  <Ionicons name="calendar-outline" size={26} color={COLORS.primary} />
+                  <Text style={styles.quickActionText}>Browse Events</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.quickAction} onPress={handleOpportunitiesPress}>
+                  <Ionicons name="briefcase-outline" size={26} color={COLORS.primary} />
                   <Text style={styles.quickActionText}>Find Opportunities</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.quickAction}>
-                  <Ionicons name="school-outline" size={24} color={COLORS.primary} />
-                  <Text style={styles.quickActionText}>View Plan</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -128,35 +212,8 @@ export const HomeScreen: React.FC = () => {
             />
           </View>
         </View>
-      </KeyboardAvoidingView >
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={selectedOpportunity !== null}
-        onRequestClose={() => setSelectedOpportunity(null)}
-      >
-        <View style={styles.modalCenteredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalTitle}>{selectedOpportunity?.title}</Text>
-            <Text style={styles.modalCompany}>{selectedOpportunity?.company}</Text>
-
-            <ScrollView style={styles.modalContentScrollView}>
-              <Text style={styles.modalDescription}>
-                {selectedOpportunity?.description}
-              </Text>
-            </ScrollView>
-
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => setSelectedOpportunity(null)}
-            >
-              <Text style={styles.modalButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    </SafeAreaView >
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
@@ -175,34 +232,99 @@ const styles = StyleSheet.create({
     marginTop: SPACING.lg,
     marginBottom: SPACING.xxl,
   },
+  circleNavContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.xxl,
+    gap: SPACING.lg,
+  },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: SPACING.xl,
     marginHorizontal: -SPACING.sm,
   },
-  circleNavContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: SPACING.xxxl,
-    gap: SPACING.xxl,
-  },
   section: {
     marginBottom: SPACING.xl,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: SPACING.lg,
   },
+  seeAll: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  // Upcoming Events
+  eventCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.secondary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  eventIconCol: {
+    marginRight: SPACING.md,
+  },
+  eventInfo: {
+    flex: 1,
+  },
+  eventTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  eventMeta: {
+    fontSize: 12,
+    color: COLORS.muted,
+    marginTop: 2,
+  },
+  scoreboardChip: {
+    backgroundColor: COLORS.secondary + '20',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginLeft: SPACING.sm,
+  },
+  scoreboardChipText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.secondary,
+  },
+  emptyEvents: {
+    alignItems: 'center',
+    paddingVertical: SPACING.xl,
+    gap: SPACING.sm,
+  },
+  emptyEventsText: {
+    fontSize: 13,
+    color: COLORS.muted,
+  },
+  // Quick Actions
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   quickAction: {
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.card,
     padding: SPACING.xl,
     borderRadius: SPACING.md,
     alignItems: 'center',
@@ -210,17 +332,18 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACING.xs,
     shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
   },
   quickActionText: {
-    marginTop: SPACING.md,
+    marginTop: SPACING.sm,
     fontSize: 10,
-    fontWeight: '500',
+    fontWeight: '600',
     color: COLORS.text,
     textAlign: 'center',
   },
+  // Search bar
   searchBarContainer: {
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.md,
@@ -248,108 +371,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.text,
     paddingVertical: SPACING.xs,
-  },
-  courseCard: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  courseInfo: {
-    flex: 1,
-  },
-  courseCode: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  courseName: {
-    fontSize: 14,
-    color: COLORS.text,
-    marginTop: 2,
-  },
-  courseCredits: {
-    fontSize: 12,
-    color: '#64748b',
-    marginTop: 4,
-  },
-  priorityBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  highPriority: {
-    backgroundColor: '#fef2f2',
-  },
-  mediumPriority: {
-    backgroundColor: '#fefbf2',
-  },
-  priorityText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  highPriorityText: {
-    color: '#dc2626',
-  },
-  mediumPriorityText: {
-    color: '#d97706',
-  },
-  modalCenteredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalView: {
-    width: '90%',
-    maxHeight: '80%',
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 25,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  modalCompany: {
-    fontSize: 16,
-    color: '#64748b',
-    marginBottom: 15,
-  },
-  modalContentScrollView: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  modalDescription: {
-    fontSize: 14,
-    textAlign: 'left',
-    lineHeight: 22,
-  },
-  modalButton: {
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    backgroundColor: COLORS.buttonPrimaryBackground,
-  },
-  modalButtonText: {
-    color: COLORS.buttonPrimaryText,
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
 });
