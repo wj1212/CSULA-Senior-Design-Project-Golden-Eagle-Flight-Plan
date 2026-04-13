@@ -8,6 +8,7 @@ import { PlaceholderScreen } from '../screens/student/PlaceholderScreen';
 import { ScoreboardScreen } from '../screens/student/ScoreboardScreen';
 import { CoursesScreen } from '../screens/student/CoursesScreen';
 import { ResourcesScreen } from '../screens/student/ResourcesScreen';
+import { SettingsScreen } from '../screens/student/SettingsScreen';
 import { Image, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
@@ -277,7 +278,7 @@ export const BottomTabNavigator: React.FC = () => {
       <Tab.Screen name="Courses" component={CoursesScreen} />
       <Tab.Screen name="Plan" component={ScoreboardScreen} options={{ tabBarLabel: 'Scoreboard' }} />
       <Tab.Screen name="Resources" component={ResourcesScreen} />
-      <Tab.Screen name="Settings" children={() => <PlaceholderScreen title="Settings" />} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
 };

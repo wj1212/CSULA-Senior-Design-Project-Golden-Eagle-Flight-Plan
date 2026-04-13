@@ -219,6 +219,19 @@ const authService = {
     }
   },
 
+  // Change password
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    try {
+      await api.post('/auth/change-password', { currentPassword, newPassword });
+      return { success: true };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to change password',
+      };
+    }
+  },
+
   // Logout
   logout: async () => {
     await clearStoredToken();

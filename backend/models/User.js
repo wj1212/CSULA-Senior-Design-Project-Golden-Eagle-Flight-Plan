@@ -54,6 +54,13 @@ const UserSchema = new mongoose.Schema(
     cin: String, // College-assigned ID number
     linkedIn: String, // LinkedIn profile URL
 
+    // ==================== SETTINGS ====================
+    isProfilePublic: { type: Boolean, default: true },
+    notificationPrefs: {
+      events:               { type: Boolean, default: true },
+      scoreboardMilestones: { type: Boolean, default: true },
+    },
+
     // ==================== SENSITIVE STUDENT DATA (Privacy Controlled) ====================
     // OSD (Disability Services) information - SENSITIVE DATA
     // Only visible to the student themselves and authorized faculty
