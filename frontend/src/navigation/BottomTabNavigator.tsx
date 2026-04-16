@@ -265,7 +265,7 @@ export const BottomTabNavigator: React.FC = () => {
         })}
       />
       <Tab.Screen name="Opportunities" component={OpportunitiesScreen} />
-      <Tab.Screen name="Courses" component={CoursesScreen} />
+      <Tab.Screen name="Courses" children={() => <PlaceholderScreen title="AI Tool" />} options={{ tabBarLabel: 'AI' }} />
       <Tab.Screen name="Plan" component={ScoreboardScreen} options={{ tabBarLabel: 'Scoreboard' }} />
       <Tab.Screen name="Resources" component={ResourcesScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />

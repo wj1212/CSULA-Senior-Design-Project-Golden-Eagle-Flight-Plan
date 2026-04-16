@@ -61,6 +61,17 @@ const FacultyDashboard: React.FC = () => {
   const merge = (k: 'resource' | 'event') => (p: Partial<typeof s[typeof k]>) =>
     set(x => ({ ...x, [k]: { ...x[k], ...p } }));
 
+  // Append a suggested tag to a comma-separated hashtag string (no duplicates)
+  const appendTag = (current: string, tag: string): string => {
+    const trimmed = current.trim();
+    if (!trimmed) return tag;
+    const existing = trimmed.split(',').map(t => t.trim().toLowerCase().replace(/^#/, ''));
+    if (existing.includes(tag.toLowerCase())) return current;
+    return `${trimmed}, ${tag}`;
+  };
+
+  const GRADE_CHIPS = ['freshman', 'sophomore', 'junior', 'senior', 'graduate'];
+
   // Parse hashtags from comma-separated string
   const parseHashtags = (hashtagStr: string): string[] => {
     if (!hashtagStr.trim()) return [];
@@ -458,6 +469,18 @@ const FacultyDashboard: React.FC = () => {
         <Text style={styles.hashtagHint}>
           💡 Tip: Separate hashtags with commas. The # symbol is optional.
         </Text>
+        <View style={styles.gradeChipsRow}>
+          <Text style={styles.gradeChipsLabel}>Target grade: </Text>
+          {GRADE_CHIPS.map(chip => (
+            <TouchableOpacity
+              key={chip}
+              style={styles.gradeChip}
+              onPress={() => merge('resource')({ hashtags: appendTag(s.resource.hashtags, chip) })}
+            >
+              <Text style={styles.gradeChipText}>{chip}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
         <Button label={loading ? 'Adding...' : 'Add Resource'} onPress={addResource} disabled={loading} />
         
         {s.resources.length === 0 ? (
@@ -541,6 +564,18 @@ const FacultyDashboard: React.FC = () => {
         <Text style={styles.hashtagHint}>
           Tip: Separate hashtags with commas. The # symbol is optional.
         </Text>
+        <View style={styles.gradeChipsRow}>
+          <Text style={styles.gradeChipsLabel}>Target grade: </Text>
+          {GRADE_CHIPS.map(chip => (
+            <TouchableOpacity
+              key={chip}
+              style={styles.gradeChip}
+              onPress={() => merge('event')({ hashtags: appendTag(s.event.hashtags, chip) })}
+            >
+              <Text style={styles.gradeChipText}>{chip}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <Text style={styles.dropdownLabel}>Scoreboard Category (optional)</Text>
         <View style={styles.categoryDropdown}>
@@ -667,6 +702,18 @@ const FacultyDashboard: React.FC = () => {
               <Text style={styles.hashtagHint}>
                 💡 Tip: Separate hashtags with commas. The # symbol is optional.
               </Text>
+              <View style={styles.gradeChipsRow}>
+                <Text style={styles.gradeChipsLabel}>Target grade: </Text>
+                {GRADE_CHIPS.map(chip => (
+                  <TouchableOpacity
+                    key={chip}
+                    style={styles.gradeChip}
+                    onPress={() => setEditForm({ ...editForm, hashtags: appendTag(editForm.hashtags, chip) })}
+                  >
+                    <Text style={styles.gradeChipText}>{chip}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
               <View style={styles.modalButtons}>
                 <TouchableOpacity onPress={cancelEdit} style={[styles.modalButton, styles.cancelButton]}>
                   <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -722,6 +769,18 @@ const FacultyDashboard: React.FC = () => {
               <Text style={styles.hashtagHint}>
                 Tip: Separate hashtags with commas. The # symbol is optional.
               </Text>
+              <View style={styles.gradeChipsRow}>
+                <Text style={styles.gradeChipsLabel}>Target grade: </Text>
+                {GRADE_CHIPS.map(chip => (
+                  <TouchableOpacity
+                    key={chip}
+                    style={styles.gradeChip}
+                    onPress={() => setEditForm({ ...editForm, hashtags: appendTag(editForm.hashtags, chip) })}
+                  >
+                    <Text style={styles.gradeChipText}>{chip}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
               <Text style={styles.dropdownLabel}>Scoreboard Category (optional)</Text>
               <View style={styles.categoryDropdown}>
@@ -816,6 +875,10 @@ const styles = StyleSheet.create({
   
   helpText: { color: COLORS.text, opacity: 0.7, fontSize: 13, marginBottom: SPACING.sm },
   hashtagHint: { color: COLORS.primary, fontSize: 12, marginTop: -SPACING.xs, marginBottom: SPACING.xs, fontStyle: 'italic' },
+  gradeChipsRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginBottom: SPACING.sm },
+  gradeChipsLabel: { fontSize: 12, color: COLORS.muted, fontWeight: '600' },
+  gradeChip: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: SPACING.sm, paddingVertical: 4 },
+  gradeChipText: { fontSize: 12, color: COLORS.text, fontWeight: '500' },
 
   listHeader: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginTop: SPACING.lg, marginBottom: SPACING.sm },
   listTitle: { fontWeight: '700', color: COLORS.text, marginBottom: 4, fontSize: 15 },

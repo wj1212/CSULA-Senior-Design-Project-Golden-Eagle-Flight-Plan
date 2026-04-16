@@ -30,6 +30,7 @@ export const ResourcesScreen: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [selectedHashtag, setSelectedHashtag] = useState<string | null>(null);
+  const [personalized, setPersonalized] = useState(true);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'resources' | 'events'>('all');
@@ -37,14 +38,15 @@ export const ResourcesScreen: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [selectedHashtag]);
+  }, [selectedHashtag, personalized]);
 
   const loadData = async () => {
     setLoading(true);
     try {
+      const hashtagFilter = personalized ? undefined : (selectedHashtag || undefined);
       const [resourcesRes, eventsRes, hashtagsRes] = await Promise.all([
-        resourceService.getResources(selectedHashtag || undefined),
-        resourceService.getEvents(selectedHashtag || undefined),
+        resourceService.getResources(hashtagFilter, personalized),
+        resourceService.getEvents(hashtagFilter, personalized),
         resourceService.getHashtags(),
       ]);
 
@@ -117,30 +119,45 @@ export const ResourcesScreen: React.FC = () => {
     }
   };
 
-  const renderHashtagFilter = () => (
-    <View style={styles.hashtagsSection}>
-      <Text style={styles.hashtagsTitle}>Browse by Category:</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hashtagsScroll}>
+  const renderModeSelector = () => (
+    <View style={styles.modeSelectorContainer}>
+      <View style={styles.modeToggle}>
         <TouchableOpacity
-          style={[styles.hashtagChip, !selectedHashtag && styles.hashtagChipActive]}
-          onPress={() => setSelectedHashtag(null)}
+          style={[styles.modeButton, personalized && styles.modeButtonActive]}
+          onPress={() => { setPersonalized(true); setSelectedHashtag(null); }}
         >
-          <Text style={[styles.hashtagText, !selectedHashtag && styles.hashtagTextActive]}>
-            All
-          </Text>
+          <Ionicons name="sparkles" size={14} color={personalized ? COLORS.onPrimary : COLORS.muted} />
+          <Text style={[styles.modeButtonText, personalized && styles.modeButtonTextActive]}>For You</Text>
         </TouchableOpacity>
-        {hashtags.map((tag) => (
+        <TouchableOpacity
+          style={[styles.modeButton, !personalized && styles.modeButtonActive]}
+          onPress={() => setPersonalized(false)}
+        >
+          <Ionicons name="apps-outline" size={14} color={!personalized ? COLORS.onPrimary : COLORS.muted} />
+          <Text style={[styles.modeButtonText, !personalized && styles.modeButtonTextActive]}>All</Text>
+        </TouchableOpacity>
+      </View>
+      {!personalized && hashtags.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hashtagsScroll}>
           <TouchableOpacity
-            key={tag}
-            style={[styles.hashtagChip, selectedHashtag === tag && styles.hashtagChipActive]}
-            onPress={() => setSelectedHashtag(tag)}
+            style={[styles.hashtagChip, !selectedHashtag && styles.hashtagChipActive]}
+            onPress={() => setSelectedHashtag(null)}
           >
-            <Text style={[styles.hashtagText, selectedHashtag === tag && styles.hashtagTextActive]}>
-              {tag}
-            </Text>
+            <Text style={[styles.hashtagText, !selectedHashtag && styles.hashtagTextActive]}>All</Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+          {hashtags.map((tag) => (
+            <TouchableOpacity
+              key={tag}
+              style={[styles.hashtagChip, selectedHashtag === tag && styles.hashtagChipActive]}
+              onPress={() => setSelectedHashtag(tag)}
+            >
+              <Text style={[styles.hashtagText, selectedHashtag === tag && styles.hashtagTextActive]}>
+                #{tag}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 
@@ -280,7 +297,7 @@ export const ResourcesScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {renderHashtagFilter()}
+      {renderModeSelector()}
       {renderTabs()}
 
       <ScrollView
@@ -288,24 +305,15 @@ export const ResourcesScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {selectedHashtag && (
-          <View style={styles.filterBanner}>
-            <Text style={styles.filterBannerText}>
-              Showing results for {selectedHashtag}
-            </Text>
-            <TouchableOpacity onPress={() => setSelectedHashtag(null)}>
-              <Text style={styles.filterBannerClear}>Clear</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
         {filteredContent.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="folder-open-outline" size={64} color={COLORS.muted} />
             <Text style={styles.emptyStateTitle}>No Content Found</Text>
             <Text style={styles.emptyStateMessage}>
-              {selectedHashtag
-                ? `No resources or events found for ${selectedHashtag}`
+              {personalized
+                ? 'No content matches your profile yet. Switch to "All" to browse everything, or ask faculty to tag content for your major or grade level.'
+                : selectedHashtag
+                ? `No content found for #${selectedHashtag}`
                 : 'No resources or events available yet. Check back soon!'}
             </Text>
           </View>
@@ -339,19 +347,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
-  // Hashtag Filter Section
-  hashtagsSection: {
-    padding: SPACING.md,
+  // Mode Selector (For You / All toggle)
+  modeSelectorContainer: {
     backgroundColor: COLORS.card,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
   },
-  hashtagsTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+  modeToggle: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.background,
+    borderRadius: 8,
+    padding: 3,
     marginBottom: SPACING.sm,
   },
+  modeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: SPACING.sm,
+    borderRadius: 6,
+  },
+  modeButtonActive: {
+    backgroundColor: COLORS.primary,
+  },
+  modeButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.muted,
+  },
+  modeButtonTextActive: {
+    color: COLORS.onPrimary,
+  },
+
   hashtagsScroll: {
     flexDirection: 'row',
   },
@@ -412,28 +444,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-  },
-
-  // Filter Banner
-  filterBanner: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    padding: SPACING.md,
-    borderRadius: 8,
-    marginBottom: SPACING.md,
-  },
-  filterBannerText: {
-    color: COLORS.onPrimary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  filterBannerClear: {
-    color: COLORS.onPrimary,
-    fontSize: 14,
-    fontWeight: '700',
-    textDecorationLine: 'underline',
   },
 
   // Cards

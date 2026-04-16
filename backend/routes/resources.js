@@ -195,25 +195,49 @@ router.delete("/events/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// ==================== PERSONALIZATION HELPERS ====================
+
+const normalizeTag = (s) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+// Returns true if the item should appear in the student's "For You" feed.
+// Items with no hashtags are universal (shown to everyone).
+// Items with hashtags are shown only when at least one hashtag matches the
+// student's grade level, major, or career interests.
+function matchesStudentProfile(hashtags, student) {
+  if (!hashtags || hashtags.length === 0) return true;
+  const profileTags = new Set(
+    [student.gradeLevel, ...(student.careerInterests || []), student.major]
+      .filter(Boolean)
+      .map(normalizeTag)
+  );
+  return hashtags.some((t) => profileTags.has(normalizeTag(t)));
+}
+
 // ==================== STUDENT ROUTES ====================
 
-// Get all resources (optionally filter by hashtag)
+// Get all resources (optionally filter by hashtag or personalized)
 router.get("/resources", authenticateToken, async (req, res) => {
   try {
-    const { hashtag } = req.query;
-    
+    const { hashtag, personalized } = req.query;
+
     let query = {};
-    
+
     // Faculty and Student Organization accounts only see their own resources
     if (req.user.userType === "Faculty" || req.user.userType === "Student Organization") {
       query.createdBy = req.user._id;
     }
-    
+
     if (hashtag) {
       query.hashtags = hashtag; // Filter by hashtag
     }
 
-    const resources = await Resource.find(query).sort({ createdAt: -1 });
+    let resources = await Resource.find(query).sort({ createdAt: -1 });
+
+    // Personalized "For You" filter — only for students
+    if (personalized === "true" && req.user.userType === "Student") {
+      resources = resources.filter((r) => matchesStudentProfile(r.hashtags, req.user));
+    }
+
     res.json({ resources });
   } catch (error) {
     console.error("Error fetching resources:", error);
@@ -221,24 +245,29 @@ router.get("/resources", authenticateToken, async (req, res) => {
   }
 });
 
-// Get all events (optionally filter by hashtag)
+// Get all events (optionally filter by hashtag or personalized)
 // Enriches each event with rsvpCount and isRsvped for the authenticated student.
 router.get("/events", authenticateToken, async (req, res) => {
   try {
-    const { hashtag } = req.query;
+    const { hashtag, personalized } = req.query;
 
     let query = {};
-    
+
     // Faculty and Student Organization accounts only see their own events
     if (req.user.userType === "Faculty" || req.user.userType === "Student Organization") {
       query.createdBy = req.user._id;
     }
-    
+
     if (hashtag) {
       query.hashtags = hashtag; // Filter by hashtag
     }
 
-    const events = await Event.find(query).sort({ createdAt: -1 });
+    let events = await Event.find(query).sort({ createdAt: -1 });
+
+    // Personalized "For You" filter — only for students
+    if (personalized === "true" && req.user.userType === "Student") {
+      events = events.filter((e) => matchesStudentProfile(e.hashtags, req.user));
+    }
 
     const userId = req.user._id.toString();
     const enriched = events.map((evt) => {

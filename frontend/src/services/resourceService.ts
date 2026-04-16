@@ -249,13 +249,16 @@ export const deleteEvent = async (id: string): Promise<{ success: boolean; error
 
 // Student: Get all resources (optionally filter by hashtag)
 export const getResources = async (
-  hashtag?: string
+  hashtag?: string,
+  personalized?: boolean
 ): Promise<{ success: boolean; resources?: Resource[]; error?: string }> => {
   try {
     const token = await getStoredToken();
-    const url = hashtag
-      ? `${API_URL}/resources?hashtag=${encodeURIComponent(hashtag)}`
-      : `${API_URL}/resources`;
+    const params = new URLSearchParams();
+    if (hashtag) params.append('hashtag', hashtag);
+    if (personalized) params.append('personalized', 'true');
+    const qs = params.toString();
+    const url = qs ? `${API_URL}/resources?${qs}` : `${API_URL}/resources`;
 
     const response = await fetch(url, {
       headers: {
@@ -276,15 +279,18 @@ export const getResources = async (
   }
 };
 
-// Student: Get all events (optionally filter by hashtag)
+// Student: Get all events (optionally filter by hashtag or personalized)
 export const getEvents = async (
-  hashtag?: string
+  hashtag?: string,
+  personalized?: boolean
 ): Promise<{ success: boolean; events?: Event[]; error?: string }> => {
   try {
     const token = await getStoredToken();
-    const url = hashtag
-      ? `${API_URL}/events?hashtag=${encodeURIComponent(hashtag)}`
-      : `${API_URL}/events`;
+    const params = new URLSearchParams();
+    if (hashtag) params.append('hashtag', hashtag);
+    if (personalized) params.append('personalized', 'true');
+    const qs = params.toString();
+    const url = qs ? `${API_URL}/events?${qs}` : `${API_URL}/events`;
 
     const response = await fetch(url, {
       headers: {
