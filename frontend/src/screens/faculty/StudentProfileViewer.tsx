@@ -34,7 +34,7 @@ type Student = {
   linkedIn?: string;
   osd?: string[];
 };
-
+ 
 const StudentProfileViewer: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Student[]>([]);
@@ -43,6 +43,8 @@ const StudentProfileViewer: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [studentDetails, setStudentDetails] = useState<Student | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [scoreboard, setScoreboard] = useState<any>(null);
+
 
   // Debounced search
   useEffect(() => {
@@ -87,32 +89,51 @@ const StudentProfileViewer: React.FC = () => {
   };
 
   const viewStudentDetails = async (student: Student) => {
-    setSelectedStudent(student);
-    setDetailsLoading(true);
-    setModalVisible(true);
+  setSelectedStudent(student);
+  setDetailsLoading(true);
+  setModalVisible(true);
 
-    try {
-      console.log('Fetching details for student:', student.id);
-      const result = await authService.getStudentDetails(student.id);
-      console.log('Student details result:', result);
-      
-      if (result.success && result.student) {
-        // Ensure student has id field mapped from _id
-        const studentData = {
-          ...result.student,
-          id: result.student._id || result.student.id,
-        };
-        setStudentDetails(studentData);
-      } else {
-        Alert.alert('Error', result.error || 'Failed to load student details');
-      }
-    } catch (error) {
-      console.error('Error fetching student details:', error);
-      Alert.alert('Error', 'Failed to load student details: ' + (error instanceof Error ? error.message : String(error)));
-    } finally {
-      setDetailsLoading(false);
+  try {
+    console.log('Fetching details for student:', student.id);
+
+    const [profileResult, scoreboardResult] = await Promise.all([
+      authService.getStudentDetails(student.id),
+      authService.getStudentScoreboard(student.id),
+    ]);
+
+    console.log('Student details result:', profileResult);
+
+    if (profileResult.success && profileResult.student) {
+      const studentData = {
+        ...profileResult.student,
+        id: profileResult.student._id || profileResult.student.id,
+      };
+      setStudentDetails(studentData);
+    } else {
+      Alert.alert('Error', profileResult.error || 'Failed to load student details');
     }
-  };
+
+    // SCOREBOARD 
+    console.log('Scoreboard result:', scoreboardResult);
+
+    if (scoreboardResult && scoreboardResult.completions) {
+      setScoreboard(scoreboardResult);
+    } else {
+      console.warn('No scoreboard data found');
+    }
+
+  } catch (error) {
+    console.error('Error fetching student details:', error);
+    Alert.alert(
+      'Error',
+      'Failed to load student details: ' +
+        (error instanceof Error ? error.message : String(error))
+    );
+  } finally {
+    setDetailsLoading(false);
+  }
+};
+
 
   const renderSearchResult = ({ item }: { item: Student }) => (
     <TouchableOpacity
@@ -159,6 +180,67 @@ const StudentProfileViewer: React.FC = () => {
       </View>
     );
   };
+
+  const mapCategory = (cat: string) => {
+   if(!cat) return ""; 
+   if(cat === "ACADEMIC_PROGRESS" || cat === "PROFESSIONAL_SKILLS"){
+    return "ACADEMIC";
+   }
+   if (cat === "CAREER_PREP") return "CAREER";
+
+   if (cat === "COMMUNITY_LEADERSHIP") return "COMMUNITY";
+
+   return "";
+   
+};
+const CompletionCard = ({ item }: any) => (
+  <View style={styles.completionCard}>
+    <View style={{ flex: 1 }}>
+      <Text style={styles.cardTitle}>{item.title}</Text>
+         {item.date && (
+           <Text style={styles.cardDate}>
+           {new Date(item.date).toLocaleDateString("en-US", {
+             month: "short",
+             day: "numeric",
+             year: "numeric",
+           })}
+  </Text>
+)}
+    </View>
+  </View>
+);
+
+type SectionType = "ACADEMIC" | "CAREER" | "COMMUNITY";
+
+const [expandedSections, setExpandedSections] = useState<Record<SectionType, boolean>>({
+  ACADEMIC: true,
+  CAREER: true,
+  COMMUNITY: true,
+});
+
+const toggleSection = (section: SectionType) => {
+  setExpandedSections(prev => ({
+    ...prev,
+    [section]: !prev[section],
+  }));
+};
+
+const grouped = React.useMemo(() => {
+  const data: Record<SectionType, any[]> = {
+    ACADEMIC: [],
+    CAREER: [],
+    COMMUNITY: [],
+  };
+
+  scoreboard?.completions?.forEach((c: any) => {
+    const cat = mapCategory(c.category);
+    if (data[cat as SectionType]) {
+      data[cat as SectionType].push(c);
+    }
+  });
+
+  return data;
+}, [scoreboard]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -224,62 +306,106 @@ const StudentProfileViewer: React.FC = () => {
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       )}
+<Modal
+  visible={modalVisible}
+  animationType="slide"
+  transparent={false}
+  onRequestClose={() => setModalVisible(false)}
+>
+  <SafeAreaView style={styles.modalContainer}>
+    <View style={styles.modalHeader}>
+      <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+        <Ionicons name="chevron-back" size={28} color={COLORS.text} />
+      </TouchableOpacity>
+      <Text style={styles.modalHeaderTitle}>Student Profile</Text>
+      <View style={styles.spacer} />
+    </View>
 
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={false}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
-              <Ionicons name="chevron-back" size={28} color={COLORS.text} />
-            </TouchableOpacity>
-            <Text style={styles.modalHeaderTitle}>Student Profile</Text>
-            <View style={styles.spacer} />
+    <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+      {detailsLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      ) : studentDetails ? (
+        <View>
+          {/* ─── PROFILE HEADER ─── */}
+          <View style={styles.profileHeader}>
+            <View style={styles.profileInitial}>
+              <Text style={styles.profileInitialText}>
+                {studentDetails.name?.charAt(0).toUpperCase() || '?'}
+              </Text>
+            </View>
+            <Text style={styles.profileName}>{studentDetails.name || 'N/A'}</Text>
+            <Text style={styles.profileEmail}>{studentDetails.email || 'N/A'}</Text>
           </View>
 
-          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-            {detailsLoading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-              </View>
-            ) : studentDetails ? (
-              <View>
-                <View style={styles.profileHeader}>
-                  <View style={styles.profileInitial}>
-                    <Text style={styles.profileInitialText}>
-                      {studentDetails.name?.charAt(0).toUpperCase() || '?'}
-                    </Text>
-                  </View>
-                  <Text style={styles.profileName}>{studentDetails.name || 'N/A'}</Text>
-                  <Text style={styles.profileEmail}>{studentDetails.email || 'N/A'}</Text>
-                </View>
+          {/* ─── STUDENT DETAILS ─── */}
+          <View style={styles.detailsCard}>
+            {renderStudentDetail('CIN', studentDetails.cin, 'card')}
+            {renderStudentDetail('Grade Level', studentDetails.gradeLevel, 'school')}
+            {renderStudentDetail('Major', studentDetails.major, 'book')}
+            {renderStudentDetail('Degree Type', studentDetails.degreeType, 'star')}
+            {renderStudentDetail('GPA', studentDetails.gpa, 'trending-up')}
+            {renderStudentDetail('Credits', studentDetails.credits, 'checkmark-circle')}
+            {renderStudentDetail('Career Interests', studentDetails.careerInterests, 'briefcase')}
+            {renderStudentDetail('Financial Status', studentDetails.financialStatus, 'wallet')}
+            {renderStudentDetail('Commute Status', studentDetails.commuteStatus, 'car')}
+            {renderStudentDetail('LinkedIn', studentDetails.linkedIn, 'logo-linkedin')}
+            {studentDetails.osd && renderStudentDetail('OSD Information', studentDetails.osd, 'shield-checkmark')}
+          </View>
 
-                <View style={styles.detailsCard}>
-                  {renderStudentDetail('CIN', studentDetails.cin, 'card')}
-                  {renderStudentDetail('Grade Level', studentDetails.gradeLevel, 'school')}
-                  {renderStudentDetail('Major', studentDetails.major, 'book')}
-                  {renderStudentDetail('Degree Type', studentDetails.degreeType, 'star')}
-                  {renderStudentDetail('GPA', studentDetails.gpa, 'trending-up')}
-                  {renderStudentDetail('Credits', studentDetails.credits, 'checkmark-circle')}
-                  {renderStudentDetail('Career Interests', studentDetails.careerInterests, 'briefcase')}
-                  {renderStudentDetail('Financial Status', studentDetails.financialStatus, 'wallet')}
-                  {renderStudentDetail('Commute Status', studentDetails.commuteStatus, 'car')}
-                  {renderStudentDetail('LinkedIn', studentDetails.linkedIn, 'logo-linkedin')}
-                  {studentDetails.osd && renderStudentDetail('OSD Information', studentDetails.osd, 'shield-checkmark')}
-                </View>
-              </View>
-            ) : (
-              <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle" size={48} color={COLORS.secondary} />
-                <Text style={styles.errorText}>Failed to load student details</Text>
-              </View>
-            )}
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
+            {/* EVENTS SECTION */}
+          <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 10 }}>
+            Completed Tasks
+          </Text>
+
+          {(["ACADEMIC", "CAREER", "COMMUNITY"] as SectionType[]).map(section => (
+            <View key={section} style={{ marginBottom: 15 }}>
+
+              {/* SECTION HEADER */}
+              <TouchableOpacity
+                onPress={() => toggleSection(section)}
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  paddingVertical: 10,
+                }}
+              >
+                <Text style={{ fontSize: 16, fontWeight: '700' }}>
+                  {section}
+                </Text>
+
+                <Ionicons
+                  name={expandedSections[section] ? "chevron-up" : "chevron-down"}
+                  size={20}
+                  color={COLORS.primary}
+                />
+              </TouchableOpacity>
+
+              {/* SECTION CONTENT */}
+              {expandedSections[section] &&
+                (grouped[section].length === 0 ? (
+                  <Text style={{ color: COLORS.muted }}>
+                     No tasks completed
+                  </Text>
+                ) : (
+                  grouped[section].map((item: any) => (
+                    <CompletionCard key={item._id} item={item} />
+                  ))
+                ))}
+            </View>
+          ))}
+  </View>
+      ) : (
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle" size={48} color={COLORS.secondary} />
+          <Text style={styles.errorText}>Failed to load student details</Text>
+        </View>
+      )}
+    </ScrollView>
+  </SafeAreaView>
+</Modal>
+      
     </SafeAreaView>
   );
 };
@@ -562,6 +688,28 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
     fontWeight: '600',
   },
+  completionCard: {
+  flexDirection: "row",
+  alignItems: "center",
+  backgroundColor: COLORS.white,
+  padding: 12,
+  borderRadius: 10,
+  marginBottom: 8,
+  borderWidth: 1,
+  borderColor: "#eee",
+},
+
+cardTitle: {
+  fontSize: 14,
+  fontWeight: "600",
+  color: COLORS.text,
+},
+
+cardDate: {
+  fontSize: 12,
+  color: COLORS.muted,
+},
+
 });
 
 export default StudentProfileViewer;

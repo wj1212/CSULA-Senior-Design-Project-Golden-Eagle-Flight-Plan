@@ -46,6 +46,8 @@ export const clearStoredToken = async (): Promise<void> => {
   }
 };
 
+
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -237,6 +239,21 @@ const authService = {
     await clearStoredToken();
     return { success: true };
   },
+
+  // Get student scoreboard (Faculty only)
+getStudentScoreboard: async (id: string) => {
+  try {
+    const response = await api.get(`/scoreboard/student/${id}`);
+    return response.data;
+  } catch (error: any) {
+    return {
+      completions: [],
+      error:
+        error.response?.data?.message ||
+        "Failed to fetch scoreboard",
+    };
+  }
+},
 };
 
 export default authService;

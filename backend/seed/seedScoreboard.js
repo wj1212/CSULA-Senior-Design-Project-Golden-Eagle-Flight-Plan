@@ -13,6 +13,7 @@ import ScoreboardTask from "../models/ScoreboardTask.js";
 import connectDB from "../db.js";
 import { allTasks } from "./scoreboardData.js";
 
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: resolve(__dirname, "../.env") });
 

@@ -10,6 +10,7 @@ import profileConfigRoutes from "./routes/profileConfig.js";
 import ScoreboardTask from "./models/ScoreboardTask.js";
 import { allTasks } from "./seed/scoreboardData.js";
 
+
 dotenv.config();
 
 const app = express();

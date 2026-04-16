@@ -172,6 +172,35 @@ router.get("/me", authenticateToken, async (req, res) => {
   }
 });
 
+
+// ─── GET /api/scoreboard/student/:studentId ────────────────────────────────
+router.get("/student/:studentId", authenticateToken, async (req, res) => {
+  try {
+    if (req.user.userType !== "Faculty" && req.user.userType !== "Admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const { studentId } = req.params;
+
+    const completions = await TaskCompletion.find({ student: studentId })
+      .populate("task", "title category")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      completions: completions.map(c => ({
+        _id: c._id,
+        title: c.task?.title,
+        category: c.task?.category,
+        points: c.pointsAwarded,
+        date: c.createdAt,
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch scoreboard" });
+  }
+});
+
 // ─── POST /api/scoreboard/complete/:taskId ────────────────────────────────────
 // Marks a task as complete for the authenticated student.
 router.post("/complete/:taskId", authenticateToken, async (req, res) => {
