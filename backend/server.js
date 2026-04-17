@@ -34,7 +34,10 @@ async function autoSeedScoreboard() {
 connectDB().then(autoSeedScoreboard);
 
 // middleware
-app.use(cors());
+app.use(cors({
+  origin: true, // Allow all origins
+  credentials: true
+}));
 app.use(bodyParser.json());
 
 // routes
