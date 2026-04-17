@@ -3,12 +3,10 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { HomeScreen } from '../screens/student/HomeScreen';
-import { OpportunitiesScreen } from '../screens/student/OpportunitiesScreen';
-import { PlaceholderScreen } from '../screens/student/PlaceholderScreen';
 import { ScoreboardScreen } from '../screens/student/ScoreboardScreen';
-import { CoursesScreen } from '../screens/student/CoursesScreen';
 import { ResourcesScreen } from '../screens/student/ResourcesScreen';
 import { SettingsScreen } from '../screens/student/SettingsScreen';
+import { AIScreen } from '../screens/student/AIScreen';
 import { Image, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
@@ -21,7 +19,6 @@ import StudentProfileViewer from '../screens/faculty/StudentProfileViewer';
 
 type NavParamList = {
   Home: undefined;
-  Opportunities: undefined;
   Courses: undefined;
   Plan: undefined;
   Resources: undefined;
@@ -218,11 +215,8 @@ if (userType === 'student organization') {
             case 'Home':
               iconName = focused ? 'home' : 'home-outline';
               break;
-            case 'Opportunities':
-              iconName = focused ? 'target' : 'target-outline';
-              break;
             case 'Courses':
-              iconName = focused ? 'book' : 'book-outline';
+              iconName = focused ? 'sparkles' : 'sparkles-outline';
               break;
             case 'Plan':
               iconName = focused ? 'trophy' : 'trophy-outline';
@@ -287,8 +281,7 @@ if (userType === 'student organization') {
           ),
         })}
       />
-      <Tab.Screen name="Opportunities" component={OpportunitiesScreen} />
-      <Tab.Screen name="Courses" children={() => <PlaceholderScreen title="AI Tool" />} options={{ tabBarLabel: 'AI' }} />
+      <Tab.Screen name="Courses" component={AIScreen} options={{ tabBarLabel: 'AI' }} />
       <Tab.Screen name="Plan" component={ScoreboardScreen} options={{ tabBarLabel: 'Scoreboard' }} />
       <Tab.Screen name="Resources" component={ResourcesScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
