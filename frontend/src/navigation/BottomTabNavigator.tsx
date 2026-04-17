@@ -113,7 +113,7 @@ export const BottomTabNavigator: React.FC = () => {
       <Tab.Screen
         name="Students"
         component={StudentProfileViewer}
-        options={{ title: 'Students' }}
+        options={{ title: 'View Student Profiles' }}
       />
     </Tab.Navigator>
   );
@@ -122,7 +122,61 @@ export const BottomTabNavigator: React.FC = () => {
 // Student Organization (NO student tab)
 if (userType === 'student organization') {
   return (
-    <Tab.Navigator>
+    <Tab.Navigator
+      screenOptions={({ navigation, route }) => ({
+        headerTitle: () => (
+          <Image
+            source={require('../../../assets/logo-b.png')}
+            style={{ width: 160, height: 51, resizeMode: 'contain' }}
+          />
+        ),
+        headerTitleAlign: 'center',
+        headerLeft: () => <View style={styles.placeholder} />,
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={async () => {
+              await logout();
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: 'Login' }],
+                })
+              );
+            }}
+            style={[styles.headerButtonPrimary, { marginRight: SPACING.md }]}
+          >
+            <Text style={styles.headerButtonPrimaryText}>Logout</Text>
+          </TouchableOpacity>
+        ),
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: keyof typeof Ionicons.glyphMap;
+
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else {
+            iconName = 'help-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        headerStyle: {
+          backgroundColor: COLORS.headerBackground,
+          height: 70 + insets.top,
+        },
+        headerTitleStyle: {
+          fontWeight: 'bold',
+          fontSize: 18,
+        },
+        tabBarStyle: {
+          backgroundColor: COLORS.headerBackground,
+          borderTopWidth: 0,
+          paddingTop: SPACING.xs,
+          height: 70 + insets.bottom,
+        },
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.inactive,
+      })}
+    >
       <Tab.Screen
         name="Home"
         component={FacultyDashboard}
@@ -219,7 +273,7 @@ if (userType === 'student organization') {
               iconName = focused ? 'home' : 'home-outline';
               break;
             case 'Opportunities':
-              iconName = focused ? 'target' : 'target-outline';
+              iconName = focused ? 'compass' : 'compass-outline';
               break;
             case 'Courses':
               iconName = focused ? 'book' : 'book-outline';
