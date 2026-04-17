@@ -45,7 +45,7 @@ export const HomeScreen: React.FC = () => {
   // Quick action navigation
   const handleScoreboardPress  = () => navigation.navigate('Plan');
   const handleBrowseEventsPress = () => navigation.navigate('Resources');
-  const handleOpportunitiesPress = () => navigation.navigate('Opportunities');
+  const handleAIPress = () => navigation.navigate('Courses');
 
   // Circle press handlers (navigate to Scoreboard for now)
   const handleAcademicPress   = () => navigation.navigate('Plan');
@@ -193,9 +193,9 @@ export const HomeScreen: React.FC = () => {
                   <Ionicons name="calendar-outline" size={26} color={COLORS.primary} />
                   <Text style={styles.quickActionText}>Browse Events</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.quickAction} onPress={handleOpportunitiesPress}>
-                  <Ionicons name="briefcase-outline" size={26} color={COLORS.primary} />
-                  <Text style={styles.quickActionText}>Find Opportunities</Text>
+                <TouchableOpacity style={styles.quickAction} onPress={handleAIPress}>
+                  <Ionicons name="sparkles-outline" size={26} color={COLORS.primary} />
+                  <Text style={styles.quickActionText}>AI Tools</Text>
                 </TouchableOpacity>
               </View>
             </View>

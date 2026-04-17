@@ -269,9 +269,6 @@ if (userType === 'student organization') {
             case 'Home':
               iconName = focused ? 'home' : 'home-outline';
               break;
-            case 'Opportunities':
-              iconName = focused ? 'target' : 'target-outline';
-              break;
             case 'Courses':
               iconName = focused ? 'sparkles' : 'sparkles-outline';
               break;

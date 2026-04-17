@@ -169,7 +169,6 @@ export interface CompleteTaskResponse {
 
 export interface NavigationScreens {
   Dashboard: undefined;
-  Opportunities: undefined;
   Courses: undefined;
   Plan: undefined;
   Community: undefined;
