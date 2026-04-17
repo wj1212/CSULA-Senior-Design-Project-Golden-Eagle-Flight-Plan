@@ -2,6 +2,7 @@ import express from "express";
 import ScoreboardTask from "../models/ScoreboardTask.js";
 import TaskCompletion from "../models/TaskCompletion.js";
 import Event from "../models/Event.js";
+import User from "../models/User.js";
 import { authenticateToken } from "../middleware/auth.js";
 import {
   computeLevel,
@@ -174,6 +175,7 @@ router.get("/me", authenticateToken, async (req, res) => {
 
 
 // ─── GET /api/scoreboard/student/:studentId ────────────────────────────────
+// Returns full scoreboard progress for a student — accessible by Faculty/Admin.
 router.get("/student/:studentId", authenticateToken, async (req, res) => {
   try {
     if (req.user.userType !== "Faculty" && req.user.userType !== "Admin") {
@@ -182,18 +184,77 @@ router.get("/student/:studentId", authenticateToken, async (req, res) => {
 
     const { studentId } = req.params;
 
+    const student = await User.findById(studentId).select("name gradeLevel");
+    if (!student) return res.status(404).json({ message: "Student not found" });
+
+    const gradeLevel = student.gradeLevel || "Freshman";
+
+    // All active tasks (faculty sees all tiers regardless of student's unlock level)
+    const allActiveTasks = await ScoreboardTask.find({ isActive: true }).sort({
+      yearTarget: 1, category: 1, sortOrder: 1,
+    });
+
+    // All completions for this student
     const completions = await TaskCompletion.find({ student: studentId })
-      .populate("task", "title category")
+      .populate("task", "title category points yearTarget maxCompletions")
       .sort({ createdAt: -1 });
 
+    // Per-task completion summary
+    const completionsByTask = {};
+    for (const comp of completions) {
+      if (!comp.task) continue;
+      const taskId = comp.task._id.toString();
+      if (!completionsByTask[taskId]) completionsByTask[taskId] = { count: 0, latest: null };
+      completionsByTask[taskId].count += 1;
+      if (!completionsByTask[taskId].latest) completionsByTask[taskId].latest = comp;
+    }
+
+    const completedTaskIds = new Set(Object.keys(completionsByTask));
+    const { totalPoints, pointsByCategory } = aggregatePoints(completions);
+    const levelInfo = computeLevel({ totalPoints, pointsByCategory, gradeLevel });
+    const badges = computeBadges(allActiveTasks, completedTaskIds);
+
+    const tierStatus = [1, 2, 3, 4].map((yr) => ({
+      year: yr,
+      unlocked: levelInfo.currentLevel >= (YEAR_UNLOCK_LEVEL[yr] ?? 0),
+      requiredLevel: YEAR_UNLOCK_LEVEL[yr] ?? 0,
+    }));
+
+    // Build task list grouped by year — all tiers shown so faculty can see gaps
+    const tasksByYear = {};
+    for (const task of allActiveTasks) {
+      const taskId = task._id.toString();
+      const yrKey = String(task.yearTarget);
+      if (!tasksByYear[yrKey]) tasksByYear[yrKey] = [];
+      const compSummary = completionsByTask[taskId] || null;
+      tasksByYear[yrKey].push({
+        _id: taskId,
+        title: task.title,
+        category: task.category,
+        points: task.points,
+        yearTarget: task.yearTarget,
+        maxCompletions: task.maxCompletions,
+        isCompleted: !!compSummary,
+        completionCount: compSummary ? compSummary.count : 0,
+        latestCompletion: compSummary ? {
+          completedAt: compSummary.latest.createdAt,
+          pointsAwarded: compSummary.latest.pointsAwarded,
+        } : null,
+      });
+    }
+
     res.json({
-      completions: completions.map(c => ({
-        _id: c._id,
-        title: c.task?.title,
-        category: c.task?.category,
-        points: c.pointsAwarded,
-        date: c.createdAt,
-      })),
+      student: { name: student.name, gradeLevel, standingCap: STANDING_CAPS[gradeLevel] ?? 10 },
+      levelInfo,
+      badges,
+      tasksByYear,
+      tierStatus,
+      summary: {
+        totalTasksAvailable: allActiveTasks.length,
+        totalTasksCompleted: completedTaskIds.size,
+        totalPoints,
+        pointsByCategory,
+      },
     });
   } catch (err) {
     console.error(err);

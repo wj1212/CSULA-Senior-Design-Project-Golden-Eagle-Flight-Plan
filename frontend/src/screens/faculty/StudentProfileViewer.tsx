@@ -113,13 +113,8 @@ const StudentProfileViewer: React.FC = () => {
       Alert.alert('Error', profileResult.error || 'Failed to load student details');
     }
 
-    // SCOREBOARD 
-    console.log('Scoreboard result:', scoreboardResult);
-
-    if (scoreboardResult && scoreboardResult.completions) {
+    if (scoreboardResult && scoreboardResult.levelInfo) {
       setScoreboard(scoreboardResult);
-    } else {
-      console.warn('No scoreboard data found');
     }
 
   } catch (error) {
@@ -181,65 +176,188 @@ const StudentProfileViewer: React.FC = () => {
     );
   };
 
-  const mapCategory = (cat: string) => {
-  if (!cat) return "";
-
-  const c = cat.toUpperCase();
-
-  if (c.includes("ACADEMIC")) return "ACADEMIC";
-  if (c.includes("CAREER")) return "CAREER";
-  if (c.includes("COMMUNITY")) return "COMMUNITY";
-
-  return "";
-};
-const CompletionCard = ({ item }: any) => (
-  <View style={styles.completionCard}>
-    <View style={{ flex: 1 }}>
-      <Text style={styles.cardTitle}>{item.title}</Text>
-         {item.date && (
-           <Text style={styles.cardDate}>
-           {new Date(item.date).toLocaleDateString("en-US", {
-             month: "short",
-             day: "numeric",
-             year: "numeric",
-           })}
-  </Text>
-)}
-    </View>
-  </View>
-);
-
-type SectionType = "ACADEMIC" | "CAREER" | "COMMUNITY";
-
-const [expandedSections, setExpandedSections] = useState<Record<SectionType, boolean>>({
-  ACADEMIC: true,
-  CAREER: true,
-  COMMUNITY: true,
-});
-
-const toggleSection = (section: SectionType) => {
-  setExpandedSections(prev => ({
-    ...prev,
-    [section]: !prev[section],
-  }));
-};
-
-const grouped = React.useMemo(() => {
-  const data: Record<SectionType, any[]> = {
-    ACADEMIC: [],
-    CAREER: [],
-    COMMUNITY: [],
-  };
-
-  scoreboard?.completions?.forEach((c: any) => {
-    const cat = mapCategory(c.category);
-    if (data[cat as SectionType]) {
-      data[cat as SectionType].push(c);
-    }
+  const [expandedTiers, setExpandedTiers] = useState<Record<number, boolean>>({
+    1: true, 2: false, 3: false, 4: false,
   });
 
-  return data;
-}, [scoreboard]);
+  const toggleTier = (year: number) => {
+    setExpandedTiers(prev => ({ ...prev, [year]: !prev[year] }));
+  };
+
+  const TIER_LABELS: Record<number, string> = {
+    1: 'Baby Eagle', 2: 'Fledgling Eagle', 3: 'Soaring Eagle', 4: 'Golden Eagle',
+  };
+
+  const CATEGORY_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
+    ACADEMIC_PROGRESS:    { label: 'Academic',  color: COLORS.secondary, icon: 'school-outline'   },
+    CAREER_PREP:          { label: 'Career',    color: '#ca8a04',        icon: 'briefcase-outline' },
+    COMMUNITY_LEADERSHIP: { label: 'Community', color: '#16a34a',        icon: 'people-outline'   },
+  };
+
+  const renderScoreboard = () => {
+    if (!scoreboard || !scoreboard.levelInfo) return null;
+    const { levelInfo, badges, tasksByYear, tierStatus, summary } = scoreboard;
+    const highestUnlocked = [...(tierStatus || [])].reverse().find((t: any) => t.unlocked);
+    const tierLabel = highestUnlocked ? TIER_LABELS[highestUnlocked.year] : 'Baby Eagle';
+    const completionPct = summary.totalTasksAvailable > 0
+      ? Math.round((summary.totalTasksCompleted / summary.totalTasksAvailable) * 100)
+      : 0;
+
+    return (
+      <View>
+        {/* Section header */}
+        <View style={styles.sbHeader}>
+          <Ionicons name="trophy" size={20} color={COLORS.primary} />
+          <Text style={styles.sbHeaderTitle}>Scoreboard Progress</Text>
+        </View>
+
+        {/* Level card */}
+        <View style={styles.levelCard}>
+          <View style={styles.levelLeft}>
+            <Text style={styles.levelNumber}>Level {levelInfo.currentLevel}</Text>
+            <View style={styles.tierPill}>
+              <Text style={styles.tierPillText}>{tierLabel}</Text>
+            </View>
+          </View>
+          <View style={styles.levelRight}>
+            <Text style={styles.totalPts}>{levelInfo.totalPoints.toLocaleString()} pts</Text>
+            <View style={styles.levelTrack}>
+              <View style={[styles.levelFill, { width: `${levelInfo.progressPercent}%` as any }]} />
+            </View>
+            {!levelInfo.isMaxLevel ? (
+              <Text style={styles.nextLevelHint}>
+                {levelInfo.pointsToNextLevel?.toLocaleString()} pts to Level {levelInfo.nextLevel}
+              </Text>
+            ) : (
+              <Text style={styles.maxLevelHint}>Max Level Reached!</Text>
+            )}
+          </View>
+        </View>
+
+        {/* Quick stats row */}
+        <View style={styles.statsRow}>
+          {[
+            { value: summary.totalTasksCompleted, label: 'Completed' },
+            { value: summary.totalTasksAvailable, label: 'Total Tasks' },
+            { value: `${completionPct}%`,          label: 'Progress'  },
+          ].map((s, i) => (
+            <View key={i} style={styles.statBox}>
+              <Text style={styles.statBoxValue}>{s.value}</Text>
+              <Text style={styles.statBoxLabel}>{s.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Category breakdown */}
+        <View style={styles.categoryCard}>
+          <Text style={styles.categoryCardTitle}>Points by Category</Text>
+          {Object.entries(CATEGORY_CONFIG).map(([key, cfg]) => {
+            const pts = (levelInfo.pointsByCategory as any)[key] || 0;
+            const pct = levelInfo.totalPoints > 0
+              ? Math.round((pts / levelInfo.totalPoints) * 100)
+              : 0;
+            return (
+              <View key={key} style={styles.catRow}>
+                <View style={styles.catLeft}>
+                  <Ionicons name={cfg.icon as any} size={15} color={cfg.color} />
+                  <Text style={styles.catLabel}>{cfg.label}</Text>
+                </View>
+                <View style={styles.catTrack}>
+                  <View style={[styles.catFill, { width: `${pct}%` as any, backgroundColor: cfg.color }]} />
+                </View>
+                <Text style={[styles.catPts, { color: cfg.color }]}>{pts} pts</Text>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Eagle tier badges 2×2 grid */}
+        <View style={styles.tiersGrid}>
+          {(badges as any[]).map((badge: any) => {
+            const tier = (tierStatus as any[]).find((t: any) => t.year === badge.year);
+            const locked = !tier?.unlocked;
+            return (
+              <View key={badge.year} style={[styles.tierBadgeCard, locked && styles.tierBadgeCardLocked]}>
+                <Ionicons
+                  name={badge.earned ? 'trophy' : locked ? 'lock-closed-outline' : 'trophy-outline'}
+                  size={22}
+                  color={badge.earned ? COLORS.primary : locked ? COLORS.muted : COLORS.text}
+                />
+                <Text style={[styles.tierBadgeName, locked && styles.tierBadgeNameLocked]}>
+                  {badge.label}
+                </Text>
+                {locked ? (
+                  <Text style={styles.tierBadgeLock}>Requires Level {tier?.requiredLevel}</Text>
+                ) : (
+                  <Text style={[styles.tierBadgeCount, badge.earned && { color: '#16a34a' }]}>
+                    {badge.completedForYear}/{badge.totalForYear} tasks
+                  </Text>
+                )}
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Task accordion by tier */}
+        <Text style={styles.tasksAccordionTitle}>Tasks by Tier</Text>
+        {Object.entries(tasksByYear as Record<string, any[]>)
+          .sort(([a], [b]) => Number(a) - Number(b))
+          .map(([year, tasks]) => {
+            const yr = Number(year);
+            const tierLocked = !(tierStatus as any[]).find((t: any) => t.year === yr)?.unlocked;
+            const doneCount = tasks.filter((t: any) => t.isCompleted).length;
+            const isOpen = expandedTiers[yr];
+            return (
+              <View key={year} style={styles.tierSection}>
+                <TouchableOpacity style={styles.tierSectionHeader} onPress={() => toggleTier(yr)}>
+                  <View style={styles.tierSectionLeft}>
+                    <Text style={styles.tierSectionTitle}>{TIER_LABELS[yr]}</Text>
+                    <View style={[styles.tierCountPill, tierLocked && styles.tierCountPillLocked]}>
+                      <Text style={[styles.tierCountText, tierLocked && styles.tierCountTextLocked]}>
+                        {tierLocked ? `🔒 Level ${(tierStatus as any[]).find((t:any) => t.year === yr)?.requiredLevel}` : `${doneCount}/${tasks.length}`}
+                      </Text>
+                    </View>
+                  </View>
+                  <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.muted} />
+                </TouchableOpacity>
+
+                {isOpen && tasks.map((task: any) => {
+                  const cfg = CATEGORY_CONFIG[task.category];
+                  return (
+                    <View key={task._id} style={[styles.taskRow, task.isCompleted && styles.taskRowDone]}>
+                      <Ionicons
+                        name={task.isCompleted ? 'checkmark-circle' : 'ellipse-outline'}
+                        size={18}
+                        color={task.isCompleted ? '#16a34a' : COLORS.muted}
+                        style={{ flexShrink: 0 }}
+                      />
+                      <View style={styles.taskInfo}>
+                        <Text style={[styles.taskTitle, task.isCompleted && styles.taskTitleDone]}>
+                          {task.title}
+                        </Text>
+                        {task.latestCompletion ? (
+                          <Text style={styles.taskMeta}>
+                            +{task.latestCompletion.pointsAwarded} pts ·{' '}
+                            {new Date(task.latestCompletion.completedAt).toLocaleDateString('en-US', {
+                              month: 'short', day: 'numeric', year: 'numeric',
+                            })}
+                          </Text>
+                        ) : (
+                          <Text style={styles.taskMetaMuted}>{task.points} pts available</Text>
+                        )}
+                      </View>
+                      {cfg && <View style={[styles.catDot, { backgroundColor: cfg.color }]} />}
+                    </View>
+                  );
+                })}
+              </View>
+            );
+          })}
+
+        <View style={{ height: SPACING.xxxl }} />
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -353,47 +471,7 @@ const grouped = React.useMemo(() => {
             {studentDetails.osd && renderStudentDetail('OSD Information', studentDetails.osd, 'shield-checkmark')}
           </View>
 
-            {/* EVENTS SECTION */}
-          <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 10 }}>
-            Completed Tasks
-          </Text>
-
-          {(["ACADEMIC", "CAREER", "COMMUNITY"] as SectionType[]).map(section => (
-            <View key={section} style={{ marginBottom: 15 }}>
-
-              {/* SECTION HEADER */}
-              <TouchableOpacity
-                onPress={() => toggleSection(section)}
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  paddingVertical: 10,
-                }}
-              >
-                <Text style={{ fontSize: 16, fontWeight: '700' }}>
-                  {section}
-                </Text>
-
-                <Ionicons
-                  name={expandedSections[section] ? "chevron-up" : "chevron-down"}
-                  size={20}
-                  color={COLORS.primary}
-                />
-              </TouchableOpacity>
-
-              {/* SECTION CONTENT */}
-              {expandedSections[section] &&
-                (grouped[section].length === 0 ? (
-                  <Text style={{ color: COLORS.muted }}>
-                     No tasks completed
-                  </Text>
-                ) : (
-                  grouped[section].map((item: any) => (
-                    <CompletionCard key={item._id} item={item} />
-                  ))
-                ))}
-            </View>
-          ))}
+            {renderScoreboard()}
   </View>
       ) : (
         <View style={styles.errorContainer}>
@@ -687,28 +765,304 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
     fontWeight: '600',
   },
-  completionCard: {
-  flexDirection: "row",
-  alignItems: "center",
-  backgroundColor: COLORS.white,
-  padding: 12,
-  borderRadius: 10,
-  marginBottom: 8,
-  borderWidth: 1,
-  borderColor: "#eee",
-},
+  // ── Scoreboard section ────────────────────────────────────────────────────
+  sbHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+    marginTop: SPACING.xs,
+  },
+  sbHeaderTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
 
-cardTitle: {
-  fontSize: 14,
-  fontWeight: "600",
-  color: COLORS.text,
-},
+  // Level card
+  levelCard: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+    alignItems: 'center',
+    gap: SPACING.lg,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  levelLeft: {
+    alignItems: 'center',
+    minWidth: 80,
+  },
+  levelNumber: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  tierPill: {
+    marginTop: 4,
+    backgroundColor: COLORS.primary + '20',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  tierPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  levelRight: {
+    flex: 1,
+    gap: SPACING.xs,
+  },
+  totalPts: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  levelTrack: {
+    height: 8,
+    backgroundColor: '#E8E8E8',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  levelFill: {
+    height: '100%',
+    backgroundColor: COLORS.primary,
+    borderRadius: 4,
+  },
+  nextLevelHint: {
+    fontSize: 12,
+    color: COLORS.muted,
+  },
+  maxLevelHint: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#16a34a',
+  },
 
-cardDate: {
-  fontSize: 12,
-  color: COLORS.muted,
-},
+  // Stats row
+  statsRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: SPACING.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+  },
+  statBoxValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  statBoxLabel: {
+    fontSize: 11,
+    color: COLORS.muted,
+    fontWeight: '600',
+    marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
 
+  // Category card
+  categoryCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    gap: SPACING.md,
+  },
+  categoryCardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: SPACING.xs,
+  },
+  catRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  catLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    width: 90,
+  },
+  catLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  catTrack: {
+    flex: 1,
+    height: 7,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  catFill: {
+    height: '100%',
+    borderRadius: 4,
+    minWidth: 4,
+  },
+  catPts: {
+    fontSize: 13,
+    fontWeight: '700',
+    width: 60,
+    textAlign: 'right',
+  },
+
+  // Tier badge grid
+  tiersGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  tierBadgeCard: {
+    width: '48%',
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: SPACING.md,
+    alignItems: 'center',
+    gap: SPACING.xs,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+  },
+  tierBadgeCardLocked: {
+    backgroundColor: '#F8F8F8',
+    borderColor: '#EBEBEB',
+  },
+  tierBadgeName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  tierBadgeNameLocked: {
+    color: COLORS.muted,
+  },
+  tierBadgeCount: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.muted,
+  },
+  tierBadgeLock: {
+    fontSize: 11,
+    color: COLORS.muted,
+    fontStyle: 'italic',
+  },
+
+  // Task accordion
+  tasksAccordionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: SPACING.sm,
+  },
+  tierSection: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    marginBottom: SPACING.sm,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+  },
+  tierSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+  },
+  tierSectionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  tierSectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  tierCountPill: {
+    backgroundColor: COLORS.primary + '20',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  tierCountPillLocked: {
+    backgroundColor: '#F0F0F0',
+  },
+  tierCountText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  tierCountTextLocked: {
+    color: COLORS.muted,
+  },
+  taskRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: '#F4F4F4',
+    gap: SPACING.sm,
+  },
+  taskRowDone: {
+    backgroundColor: '#F9FFF9',
+  },
+  taskInfo: {
+    flex: 1,
+  },
+  taskTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.muted,
+  },
+  taskTitleDone: {
+    color: COLORS.text,
+    fontWeight: '600',
+  },
+  taskMeta: {
+    fontSize: 12,
+    color: '#16a34a',
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  taskMetaMuted: {
+    fontSize: 12,
+    color: COLORS.muted,
+    marginTop: 2,
+  },
+  catDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 5,
+    flexShrink: 0,
+  },
 });
 
 export default StudentProfileViewer;
