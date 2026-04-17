@@ -1,4 +1,4 @@
-import { User, Opportunity, Course } from '../types';
+import { User, Opportunity } from '../types';
 
 export const mockUser: User = {
   id: '1',
@@ -89,41 +89,3 @@ export const mockOpportunities: Opportunity[] = [
   },
 ];
 
-export const mockCourses: Course[] = [
-  {
-    _id: '1',
-    courseCode: 'CS 301',
-    courseName: 'Algorithms & Data Structures',
-    units: 3,
-    prerequisites: [],
-    semester: 1,
-    category: 'Lower Division Core',
-    isElective: false,
-    description: 'Study of algorithms and data structures',
-    isRequired: true,
-  },
-  {
-    _id: '2',
-    courseCode: 'CS 320',
-    courseName: 'Software Engineering',
-    units: 3,
-    prerequisites: ['CS 301'],
-    semester: 2,
-    category: 'Upper Division Core',
-    isElective: false,
-    description: 'Software engineering principles and practices',
-    isRequired: true,
-  },
-  {
-    _id: '3',
-    courseCode: 'MATH 280',
-    courseName: 'Statistics',
-    units: 3,
-    prerequisites: [],
-    semester: 1,
-    category: 'Math',
-    isElective: false,
-    description: 'Introduction to statistical analysis',
-    isRequired: true,
-  },
-];
