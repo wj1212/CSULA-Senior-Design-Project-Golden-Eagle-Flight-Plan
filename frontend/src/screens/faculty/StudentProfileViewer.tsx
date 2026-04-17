@@ -182,16 +182,15 @@ const StudentProfileViewer: React.FC = () => {
   };
 
   const mapCategory = (cat: string) => {
-   if(!cat) return ""; 
-   if(cat === "ACADEMIC_PROGRESS" || cat === "PROFESSIONAL_SKILLS"){
-    return "ACADEMIC";
-   }
-   if (cat === "CAREER_PREP") return "CAREER";
+  if (!cat) return "";
 
-   if (cat === "COMMUNITY_LEADERSHIP") return "COMMUNITY";
+  const c = cat.toUpperCase();
 
-   return "";
-   
+  if (c.includes("ACADEMIC")) return "ACADEMIC";
+  if (c.includes("CAREER")) return "CAREER";
+  if (c.includes("COMMUNITY")) return "COMMUNITY";
+
+  return "";
 };
 const CompletionCard = ({ item }: any) => (
   <View style={styles.completionCard}>

@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import FacultyDashboard from '../screens/faculty/FacultyDashboard';
 import AdminDashboard from '../screens/admin/AdminDashboard';
+import StudentProfileViewer from '../screens/faculty/StudentProfileViewer';
 
 type NavParamList = {
   Home: undefined;
@@ -28,6 +29,7 @@ type NavParamList = {
   Profile: undefined;
   FacultyDashboard: undefined;
   AdminDashboard: undefined;
+  Students: undefined;
 };
 
 const Tab = createBottomTabNavigator<NavParamList>();
@@ -42,72 +44,93 @@ export const BottomTabNavigator: React.FC = () => {
   const userType = rawType.toLowerCase() || 'student';
   const isFacultyOrOrg = userType === 'faculty' || userType === 'student organization';
 
-  if (isFacultyOrOrg) {
-    return (
-      <Tab.Navigator
-        screenOptions={({ navigation, route }) => ({
-          headerTitle: () => (
-            <Image
-              source={require('../../../assets/logo-b.png')}
-              style={{ width: 160, height: 51, resizeMode: 'contain' }}
-            />
-          ),
-          headerTitleAlign: 'center',
-          headerLeft: () => <View style={styles.placeholder} />,
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={async () => {
-                await logout();
-                // safe reset to landing
-                navigation.dispatch(
-                  CommonActions.reset({
-                    index: 0,
-                    routes: [{ name: 'Login' }],
-                  })
-                );
-              }}
-              style={[styles.headerButtonPrimary, { marginRight: SPACING.md }]}
-            >
-              <Text style={styles.headerButtonPrimaryText}>Logout</Text>
-            </TouchableOpacity>
-          ),
-          tabBarIcon: ({ focused, color, size }) => {
-            let iconName: keyof typeof Ionicons.glyphMap;
-            switch (route.name) {
-              case 'Home':
-                iconName = focused ? 'home' : 'home-outline';
-                break;
-              default:
-                iconName = 'help-outline';
-            }
-            return <Ionicons name={iconName} size={size} color={color} />;
-          },
-          headerStyle: {
-            backgroundColor: COLORS.headerBackground,
-            height: 70 + insets.top,
-          },
-          headerTitleStyle: {
-            fontWeight: 'bold',
-            fontSize: 18,
-          },
-          tabBarStyle: {
-            backgroundColor: COLORS.headerBackground,
-            borderTopWidth: 0,
-            paddingTop: SPACING.xs,
-            height: 70 + insets.bottom,
-          },
-          tabBarActiveTintColor: COLORS.primary,
-          tabBarInactiveTintColor: COLORS.inactive,
-        })}
-      >
-        <Tab.Screen
-          name="Home"
-          component={FacultyDashboard}
-          options={{ title: 'Posting Events' }}
-        />
-      </Tab.Navigator>
-    );
-  }
+  // Faculty ONLY
+    if (userType === 'faculty') {
+      return (
+    <Tab.Navigator
+      screenOptions={({ navigation, route }) => ({
+        headerTitle: () => (
+          <Image
+            source={require('../../../assets/logo-b.png')}
+            style={{ width: 160, height: 51, resizeMode: 'contain' }}
+          />
+        ),
+        headerTitleAlign: 'center',
+        headerLeft: () => <View style={styles.placeholder} />,
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={async () => {
+              await logout();
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: 'Login' }],
+                })
+              );
+            }}
+            style={[styles.headerButtonPrimary, { marginRight: SPACING.md }]}
+          >
+            <Text style={styles.headerButtonPrimaryText}>Logout</Text>
+          </TouchableOpacity>
+        ),
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: keyof typeof Ionicons.glyphMap;
+
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Students') {
+            iconName = focused ? 'people' : 'people-outline';
+          } else {
+            iconName = 'help-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        headerStyle: {
+          backgroundColor: COLORS.headerBackground,
+          height: 70 + insets.top,
+        },
+        headerTitleStyle: {
+          fontWeight: 'bold',
+          fontSize: 18,
+        },
+        tabBarStyle: {
+          backgroundColor: COLORS.headerBackground,
+          borderTopWidth: 0,
+          paddingTop: SPACING.xs,
+          height: 70 + insets.bottom,
+        },
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.inactive,
+      })}
+    >
+      <Tab.Screen
+        name="Home"
+        component={FacultyDashboard}
+        options={{ title: 'Posting Events' }}
+      />
+
+      <Tab.Screen
+        name="Students"
+        component={StudentProfileViewer}
+        options={{ title: 'Students' }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+// Student Organization (NO student tab)
+if (userType === 'student organization') {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen
+        name="Home"
+        component={FacultyDashboard}
+        options={{ title: 'Posting Events' }}
+      />
+    </Tab.Navigator>
+  );
+}
 
   if (!isFacultyOrOrg && userType === 'admin') {
     return (
