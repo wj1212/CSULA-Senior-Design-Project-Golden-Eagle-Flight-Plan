@@ -27,6 +27,18 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const getAccountTypeBadgeColor = (userType: string) => {
+    if (userType === 'Faculty') return '#4CAF50';
+    if (userType === 'Student Organization') return '#2196F3';
+    return '#999';
+  };
+
+  const getAccountTypeLabel = (userType: string) => {
+    if (userType === 'Faculty') return 'Faculty';
+    if (userType === 'Student Organization') return 'Student Org';
+    return userType;
+  };
+
   React.useEffect(() => {
     loadPending();
   }, []);
@@ -59,7 +71,7 @@ const AdminDashboard: React.FC = () => {
         {/* Header */}
         <View style={styles.headerSection}>
           <Text style={styles.title}>Admin Dashboard</Text>
-          <Text style={styles.subtitle}>Manage pending faculty accounts</Text>
+          <Text style={styles.subtitle}>Manage pending faculty and student organization accounts</Text>
         </View>
 
         {/* Loading State */}
@@ -73,18 +85,28 @@ const AdminDashboard: React.FC = () => {
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>✓</Text>
             <Text style={styles.emptyTitle}>All Clear</Text>
-            <Text style={styles.emptyText}>No pending faculty accounts to review.</Text>
+            <Text style={styles.emptyText}>No pending accounts to review.</Text>
           </View>
         ) : (
           /* List of Pending Accounts */
           <View>
-            <Text style={styles.sectionTitle}>Pending Faculty Accounts ({pending.length})</Text>
+            <Text style={styles.sectionTitle}>Pending Accounts ({pending.length})</Text>
             <View style={styles.listContainer}>
               {pending.map((u, idx) => (
                 <View key={u._id}>
                   <View style={styles.accountCard}>
                     <View style={styles.cardContent}>
-                      <Text style={styles.accountName}>{u.name}</Text>
+                      <View style={styles.nameRow}>
+                        <Text style={styles.accountName}>{u.name}</Text>
+                        <View
+                          style={[
+                            styles.accountTypeBadge,
+                            { backgroundColor: getAccountTypeBadgeColor(u.userType) },
+                          ]}
+                        >
+                          <Text style={styles.accountTypeText}>{getAccountTypeLabel(u.userType)}</Text>
+                        </View>
+                      </View>
                       <Text style={styles.accountEmail}>{u.email}</Text>
                       <Text style={styles.accountStatus}>Status: Pending Review</Text>
                     </View>
@@ -215,6 +237,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.text,
     marginBottom: SPACING.sm,
+    flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  accountTypeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  accountTypeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
   },
   accountEmail: {
     fontSize: 15,

@@ -16,8 +16,8 @@ const prepareUserResponse = (user) => {
     userType: userObj.userType,
   };
 
-  // If faculty, include approval status so client can display if needed
-  if (userObj.userType === "Faculty") {
+  // If faculty or student organization, include approval status so client can display if needed
+  if (userObj.userType === "Faculty" || userObj.userType === "Student Organization") {
     response.status = userObj.status;
   }
 
@@ -68,8 +68,8 @@ router.post("/register", async (req, res) => {
       email,
       password: hashed,
       userType: registrationType,
-      // faculty accounts start pending until an admin approves them
-      status: registrationType === "Faculty" ? "pending" : undefined,
+      // faculty and student organization accounts start pending until an admin approves them
+      status: (registrationType === "Faculty" || registrationType === "Student Organization") ? "pending" : undefined,
     };
 
     // Only set student profile fields for Student accounts
@@ -133,8 +133,8 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // faculty approval flow: block pending/denied accounts
-    if (user.userType === "Faculty") {
+    // faculty and student organization approval flow: block pending/denied accounts
+    if (user.userType === "Faculty" || user.userType === "Student Organization") {
       if (user.status === "pending") {
         return res.status(403).json({ message: "Account pending admin approval" });
       }
@@ -284,56 +284,57 @@ router.get("/verify", authenticateToken, async (req, res) => {
 
 // ---------------- ADMIN ROUTES ----------------
 
-// list all faculty accounts awaiting approval
+// list all faculty and student organization accounts awaiting approval
 router.get("/admin/pending-faculty", authenticateToken, async (req, res) => {
   if (req.user.userType !== "Admin") {
     return res.status(403).json({ message: "Not authorized" });
   }
   try {
-    const pending = await User.find({ userType: "Faculty", status: "pending" }).select(
-      "-password -osd"
-    );
+    const pending = await User.find({
+      userType: { $in: ["Faculty", "Student Organization"] },
+      status: "pending",
+    }).select("-password -osd");
     res.json({ pending });
   } catch (err) {
-    console.error("Error fetching pending faculty:", err);
+    console.error("Error fetching pending accounts:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// approve faculty account
+// approve faculty or student organization account
 router.put("/admin/faculty/:id/approve", authenticateToken, async (req, res) => {
   if (req.user.userType !== "Admin") {
     return res.status(403).json({ message: "Not authorized" });
   }
   try {
-    const faculty = await User.findById(req.params.id);
-    if (!faculty || faculty.userType !== "Faculty") {
+    const user = await User.findById(req.params.id);
+    if (!user || (user.userType !== "Faculty" && user.userType !== "Student Organization")) {
       return res.status(404).json({ message: "User not found" });
     }
-    faculty.status = "approved";
-    await faculty.save();
-    res.json({ message: "Faculty approved" });
+    user.status = "approved";
+    await user.save();
+    res.json({ message: `${user.userType} approved` });
   } catch (err) {
-    console.error("Error approving faculty:", err);
+    console.error("Error approving account:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// deny faculty account
+// deny faculty or student organization account
 router.put("/admin/faculty/:id/deny", authenticateToken, async (req, res) => {
   if (req.user.userType !== "Admin") {
     return res.status(403).json({ message: "Not authorized" });
   }
   try {
-    const faculty = await User.findById(req.params.id);
-    if (!faculty || faculty.userType !== "Faculty") {
+    const user = await User.findById(req.params.id);
+    if (!user || (user.userType !== "Faculty" && user.userType !== "Student Organization")) {
       return res.status(404).json({ message: "User not found" });
     }
-    faculty.status = "denied";
-    await faculty.save();
-    res.json({ message: "Faculty denied" });
+    user.status = "denied";
+    await user.save();
+    res.json({ message: `${user.userType} denied` });
   } catch (err) {
-    console.error("Error denying faculty:", err);
+    console.error("Error denying account:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
