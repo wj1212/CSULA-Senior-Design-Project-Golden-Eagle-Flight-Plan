@@ -132,6 +132,9 @@ Our project requires **two terminal windows** running at the same time: one for 
 
 ### 🧑‍🤝‍🧑 Team Members & Roles
 
+- **Team Lead:**
+  - Arman Mahmoodzadeh
+
 - **Frontend Development:**
   - Jose Mateo Ayala
   - Adan Trejo
