@@ -338,9 +338,75 @@ These features were planned or started but not fully implemented — the new tea
 
 ## Database (MongoDB Atlas)
 
-The database is hosted on MongoDB Atlas. You'll need:
-1. An Atlas account with access to the GEFP project cluster
-2. The connection string for the `.env` file
+The database is hosted on MongoDB Atlas. You have two options:
+
+**Option A — Use the existing cluster (for initial orientation)**
+Ask the previous team for the `MONGO_URI` connection string. Paste it into `backend/.env` and you're connected to the live database with real data already in it. Use this to see the app working immediately, but avoid running destructive operations against it.
+
+**Option B — Create your own free Atlas cluster (recommended for development)**
+This gives you a clean, isolated environment with no risk to existing data. Follow the steps below.
+
+---
+
+### Setting Up Your Own MongoDB Atlas Cluster
+
+**Step 1 — Create a free account**
+Go to https://www.mongodb.com/cloud/atlas and sign up for a free account (use your school email or a shared team email).
+
+**Step 2 — Create a new project**
+1. After logging in, click **"New Project"**
+2. Name it something like `GEFP` or `Golden-Eagle-Flight-Plan`
+3. Click **"Create Project"**
+
+**Step 3 — Build a free cluster**
+1. Click **"Build a Database"**
+2. Select **"M0 Free"** (the free tier — more than enough for this project)
+3. Choose a cloud provider and region (AWS us-east-1 or any region close to you)
+4. Name your cluster (e.g., `gefp-cluster`)
+5. Click **"Create"**
+
+**Step 4 — Create a database user**
+1. When prompted, choose **"Username and Password"** authentication
+2. Enter a username (e.g., `gefp-admin`) and a strong password
+3. Click **"Create User"**
+4. **Save this username and password** — you'll need them for the connection string
+
+**Step 5 — Set network access**
+1. On the next screen, for IP access select **"Allow Access from Anywhere"** (`0.0.0.0/0`)
+   - This is fine for a development/school project. For production you would restrict this.
+2. Click **"Add Entry"** then **"Finish and Close"**
+
+**Step 6 — Get your connection string**
+1. From your cluster dashboard, click **"Connect"**
+2. Select **"Drivers"**
+3. Make sure **Node.js** is selected as the driver
+4. Copy the connection string. It will look like:
+   ```
+   mongodb+srv://<username>:<password>@gefp-cluster.xxxxx.mongodb.net/?retryWrites=true&w=majority
+   ```
+5. Replace `<username>` and `<password>` with the credentials you created in Step 4
+6. Add your database name before the `?` — name it anything, e.g. `gefp`:
+   ```
+   mongodb+srv://gefp-admin:yourpassword@gefp-cluster.xxxxx.mongodb.net/gefp?retryWrites=true&w=majority
+   ```
+
+**Step 7 — Add it to your `.env`**
+Paste the full connection string as your `MONGO_URI` in `backend/.env`:
+```
+MONGO_URI=mongodb+srv://gefp-admin:yourpassword@gefp-cluster.xxxxx.mongodb.net/gefp?retryWrites=true&w=majority
+JWT_SECRET=any-long-random-string-here
+PORT=4000
+```
+
+**Step 8 — Start the backend**
+Run `npm start` in the `backend/` folder. On first startup the server will:
+- Connect to your new empty database
+- Automatically seed all scoreboard tasks
+- You should see: `✅ Scoreboard tasks seeded (X tasks)`
+
+From here, register a new Admin account, log in, and you're up and running with a clean database.
+
+---
 
 **Collections in use:**
 - `users`
