@@ -88,10 +88,52 @@ First, we need to ensure the following software is installed on our system:
         npm install
         ```
 
-4.  **Configure the Backend**
-    * In the `backend` folder, we need to create a new file named `.env`.
-    * Add the `DB_CONNECTION_STRING` we received from MongoDB Atlas to this file.
-    * We can navigate back to the root directory when done:
+4.  **Configure Environment Variables**
+
+    #### Backend Configuration
+    
+    * In the `backend` folder, create a new file named `.env` (you can copy `.env.example` as a template).
+    * Add the following MongoDB connection details:
+        ```env
+        DB_USER=your_mongodb_username
+        DB_PASSWORD=your_mongodb_password
+        DB_URL=your_mongodb_cluster_url
+        DB_NAME=testDB
+        PORT=4000
+        DB_CONNECTION_STRING=mongodb+srv://username:password@cluster.mongodb.net/testDB?retryWrites=true&w=majority&appName=cluster-name
+        JWT_SECRET=your_jwt_secret_key
+        ```
+    * **To obtain MongoDB credentials:**
+        1. Log in to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+        2. Navigate to your cluster and click "Connect"
+        3. Choose "Drivers" and copy the connection string
+        4. Replace `<username>`, `<password>`, and other placeholders with your actual credentials
+    
+    #### Frontend Configuration
+    
+    * In the `frontend` folder, create a new file named `.env` (you can copy `.env.example` as a template).
+    * Configure the API URL based on your development environment:
+        ```env
+        EXPO_PUBLIC_API_URL=http://localhost:4000/api
+        ```
+    
+    #### Mobile Development Setup
+    
+    If you're testing the app on a **physical mobile device** instead of the Expo Go app on your computer, you need to adjust the frontend `.env` file:
+    
+    1. Find your computer's **LAN IP address**:
+        * **Windows:** Open Command Prompt and run `ipconfig`. Look for "IPv4 Address" (usually starts with `192.168.` or `10.`)
+        * **Mac/Linux:** Open Terminal and run `ifconfig`. Look for an address starting with `192.168.` or `10.`
+    
+    2. Update the `.env` file in the `frontend` folder:
+        ```env
+        EXPO_PUBLIC_API_URL=http://<YOUR_LAN_IP>:4000/api
+        ```
+        Example: `EXPO_PUBLIC_API_URL=http://192.168.0.220:4000/api`
+    
+    3. Make sure your mobile device is connected to the **same WiFi network** as your development machine.
+    
+    * Navigate back to the root directory when done:
         ```bash
         cd ..
         ```
